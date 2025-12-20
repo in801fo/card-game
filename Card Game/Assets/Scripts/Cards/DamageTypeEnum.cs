@@ -1,0 +1,9 @@
+public enum DamageTypeEnum
+{
+    SINGLEPLAYER,
+    ALLLE, //ALL LOCAL EXCLUSIVE
+    ALLLI, //ALL LOCAL INCLUSIVE
+
+    RANDOM
+
+}

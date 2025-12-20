@@ -1,0 +1,7 @@
+The difference between GameCards and InfoCards is the magnitude of information displayed.
+
+Since the cards in the deck are too small for some detail on them to be readable, another way
+of making the player aknoledge the card's effects description and other attributes has been employed: a menu.
+
+On top of every card selected in the hand a player can press the "i" button to display a menù with a fully
+rendered card, with all the information.
