@@ -1,95 +1,142 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Animations;
 
 public class InventoryUIManager : MonoBehaviour
 {
 
     [Range(1, 10)]
     [SerializeField] private float spacingCards = 1.5f;
-
     [Range(0, 1)]
     [SerializeField] private float borderDistance;
-
-    private const float cardsDefaultWidth = 2f;
     [SerializeField] private float defaultCameraDistance = 24f;
+    [SerializeField] private AnimationCurve cardReshuffleCurve;
     [field: SerializeField] public int displayableCards { get; private set; } = 0;
     private List<Card> cards;
-
     private MeshRenderer referenceCardRenderer;
 
-    private float spaceWorldX;
+    private float spaceOccupiedByCard;
 
+    private Vector3 worldStartSpawn;
+
+    /// <summary>
+    /// Amount of world units occupied by the width of one card
+    /// </summary>
     private float cardsWorldWidth;
 
     private const string effectsLabel = "effectsList";
 
-    private Vector2 leftScreenBorderStart;
-
     public void Awake()
     {
         defaultCameraDistance += Camera.main.nearClipPlane;
-
-        spaceWorldX = Mathf.Abs((Camera.main.ViewportToScreenPoint(new Vector3(0, 0, defaultCameraDistance + Camera.main.nearClipPlane)) -
-                        Camera.main.ViewportToScreenPoint(new Vector3(1, 0, defaultCameraDistance + Camera.main.nearClipPlane))).x);
-
-        //spawn a ref card so to calculate the exact number of displayable cards on the screen
     }
 
     private void Start()
     {
-        Card firstCard = CardGenerationManager.Instance.GenerateRefCard();
-        referenceCardRenderer = firstCard.GetComponent<MeshRenderer>();
-        Position(firstCard);
-
+        GenerateReferenceCard();
+        worldStartSpawn = Camera.main.ViewportToWorldPoint(new Vector3(0, 0, defaultCameraDistance));
         cardsWorldWidth = referenceCardRenderer.bounds.max.x - referenceCardRenderer.bounds.min.x;
+        spaceOccupiedByCard = cardsWorldWidth + (cardsWorldWidth * (spacingCards - 1));
 
-        CalculateDisplayebleCards();
-        InventoryManager.Instance.MoveCardsToSideDeck(displayableCards - 1, InventoryManager.Instance.GetHandDeckCount() - displayableCards);
-        this.cards = CardGenerationManager.Instance.GenerateCards(displayableCards);
-        HandleCardGeneration(cards);
+        InventoryManager.OnCardAddedToHandDeck += HandleCardAdded;
+
+        HandleCardGeneration();
     }
+
+    private void HandleCardAdded(CardScriptable scriptable)
+    {
+        this.cards = CardGenerationManager.Instance.GenerateCards(displayableCards);
+        
+        HandleAnimateCards();
+        //Position(this.cards);
+    }
+
+    private void HandleAnimateCards()
+    {
+        Coroutine[] cardsCoroutines = new Coroutine[cards.Count];
+        for(int i = 0; i < cards.Count; i++)
+        {
+            if (cardsCoroutines[i] != null)
+                StopCoroutine(cardsCoroutines[i]);
+
+            cardReshuffleAnimationParams parameters = new cardReshuffleAnimationParams()
+            {
+                targetPosition = CalculateCardTargetPosition(GetScreenBorderForCards(cards.Count).x, i),
+                duration = 3f,
+                curve = cardReshuffleCurve
+            };
+
+            print(parameters.targetPosition);
+            
+            cardsCoroutines[i] = StartCoroutine(cards[i].AnimateCard(parameters));
+        }
+    }
+
 
     private void Update()
     {
         CalculateDisplayebleCards();
-        Position(cards);
+        /*if(cards != null)
+            Position(cards);*/
     }
-    
 
-    private void HandleCardGeneration(List<Card> cards)
+
+    private void HandleCardGeneration()
     {
-        this.cards = new List<Card>(cards);
+        //here need to establish the number of displayable cards so to be able to move the extra ones in the side deck and not have to spawn them
+        CalculateDisplayebleCards();
+        InventoryManager.Instance.MoveCardsToSideDeck(displayableCards - 1, InventoryManager.Instance.GetHandDeckCount() - displayableCards);
+        this.cards = CardGenerationManager.Instance.GenerateCards(displayableCards);
         Position(this.cards);
     }
 
+    private Vector3 CalculateCardTargetPosition(float borderStartX, int cardsBeforeCurrent)
+    {
+        return
+            new Vector3(
+                //+ spaceOccupiedByCard/2 --> doing this to fix a small centering problem...
+                borderStartX + (spaceOccupiedByCard * cardsBeforeCurrent) + (spaceOccupiedByCard / 2),
+                worldStartSpawn.y,
+                worldStartSpawn.z
+            );
+    }
+
+    /// <summary>
+    /// Calculates the number of cards displayable at any time 
+    /// </summary>
     private void CalculateDisplayebleCards()
     {
         float cardPixelsWidth = GetRefCardWidth();
+        //amount of space occupied by a single card
+        float individualCardScreenSpace = cardPixelsWidth + (cardPixelsWidth * (spacingCards - 1)); //-1 as that's required so not to make the cards overlap, the rest is actual spacing...
 
+
+        //Mathf.FloorToInt -> need a whole number
         displayableCards = Mathf.FloorToInt(
-            spaceWorldX / (cardPixelsWidth + (cardPixelsWidth * (spacingCards - 1)))); 
-            //-1 as that's required so not to make the cards overlap, the rest is actual spacing...
+            //the space available on the screen in world units divided by th espace occupied on the screen by a single card
+            Screen.width / individualCardScreenSpace
+        );
     }
 
     private void Position(List<Card> cards)
     {
-        Vector3 worldStartSpawn = Camera.main.ViewportToWorldPoint(new Vector3(0, 0, defaultCameraDistance));
-        float spaceOccupiedByCard = cardsWorldWidth + (cardsWorldWidth * (spacingCards - 1));
 
         //print(Camera.main.ScreenToWorldPoint(new Vector3(Screen.width/2, 0, defaultCameraDistance + Camera.main.nearClipPlane)));
         //by calculating the starting position of the border relative to the number of cards times ("times" means multiplied)
         //half of the total space that will be occupied by each card I will be able to obtain the start of the border
-        leftScreenBorderStart.x = Camera.main.ScreenToWorldPoint(new Vector3(Screen.width/2, 0, defaultCameraDistance + Camera.main.nearClipPlane)).x
-         - ((spaceOccupiedByCard * cards.Count)/2);
 
         for (int i = 0; i < cards.Count; i++)
         {
-            cards[i].transform.parent.transform.position = new Vector3(leftScreenBorderStart.x + (spaceOccupiedByCard * i), worldStartSpawn.y, worldStartSpawn.z);
-            //doing this to fix a small centering problem...
-            if (i == 0) cards[0].transform.parent.transform.position += Vector3.right * spaceOccupiedByCard;
+            cards[i].transform.parent.transform.position = CalculateCardTargetPosition(GetScreenBorderForCards(cards.Count).x, i);
         }
 
+    }
+    
+    private Vector2 GetScreenBorderForCards(int cardsCount)
+    {
+        return new Vector2(Camera.main.ScreenToWorldPoint(new Vector3(Screen.width / 2, 0, defaultCameraDistance + Camera.main.nearClipPlane)).x
+         - (spaceOccupiedByCard * cardsCount / 2), 0);
     }
 
     private void Position(Card card)
@@ -97,6 +144,13 @@ public class InventoryUIManager : MonoBehaviour
         Position(new List<Card>() { card });
     }
 
+    private void GenerateReferenceCard()
+    {
+        Card firstCard = CardGenerationManager.Instance.GenerateRefCard();
+        referenceCardRenderer = firstCard.GetComponent<MeshRenderer>();
+        Position(firstCard);
+        firstCard.transform.parent.gameObject.SetActive(false);
+    }
 
     /// <summary>
     /// Calcualtes the current ref card's screen width
@@ -135,6 +189,8 @@ public class InventoryUIManager : MonoBehaviour
         GameObject screen = GameScreensManager.Instance.SpawnScreen("cardInfo");
         screen.GetComponentInChildren<Card>().SetUpInfoCard(card);
 
+        //this only when the card doesn't have any effects
+        if (card.cardEffects == null || card.cardEffects.Length == 0) return;
         GameObject[] effects = CardGenerationManager.Instance.CreateEffectsEntries(card.cardEffects);
 
         GameObject effectsScrollViewContentObject = GameObject.FindWithTag(effectsLabel);
@@ -152,7 +208,9 @@ public class InventoryUIManager : MonoBehaviour
 
     }
 
-
-    
+    private void OnDestroy()
+    {
+        InventoryManager.OnCardAddedToHandDeck -= HandleCardAdded;
+    }
 
 }

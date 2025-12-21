@@ -5,7 +5,7 @@ m_ProjectFiles:
     m_ContentTrackingEnabled: 1
     m_ModificationDate:
       serializedVersion: 2
-      ticks: 638998838823688782
+      ticks: 639018604314269795
     m_Hash: 1462037815
   m_LockFileStatus:
     m_FilePath: D:/Github/card-game/Card Game/Packages/packages-lock.json
@@ -13,7 +13,7 @@ m_ProjectFiles:
     m_ContentTrackingEnabled: 1
     m_ModificationDate:
       serializedVersion: 2
-      ticks: 638998838823688782
+      ticks: 639018604314269795
     m_Hash: 2944797909
 m_EmbeddedPackageManifests:
   m_ManifestsStatus: {}
@@ -128,8 +128,10 @@ m_ResolvedPackages:
     - 2.10.0
     - 2.10.1
     - 2.10.2
+    - 2.11.2
     compatible:
     - 2.10.2
+    - 2.11.2
     recommended: 2.10.2
     deprecated: []
   dependencies: []
@@ -519,9 +521,11 @@ m_ResolvedPackages:
     - 1.8.7
     - 1.8.8
     - 1.8.9
+    - 1.8.10
     compatible:
     - 1.8.9
-    recommended: 1.8.9
+    - 1.8.10
+    recommended: 1.8.10
     deprecated: []
   dependencies:
   - name: com.unity.modules.audio
@@ -3644,9 +3648,11 @@ m_ResolvedPackages:
     - 2.0.22
     - 2.0.23
     - 2.0.25
+    - 2.0.26
     compatible:
     - 2.0.25
-    recommended: 2.0.25
+    - 2.0.26
+    recommended: 2.0.26
     deprecated: []
   dependencies:
   - name: com.unity.test-framework

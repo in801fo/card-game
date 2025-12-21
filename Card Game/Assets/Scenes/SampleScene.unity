@@ -699,7 +699,7 @@ PrefabInstance:
       objectReference: {fileID: 11400000, guid: 8fd08bb11b10bb54bbde0e4df875a28a, type: 2}
     - target: {fileID: 1210240002159481530, guid: df7bea53eaf5af4438f9a5104187c15e, type: 3}
       propertyPath: handDeck.Array.size
-      value: 17
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 1210240002159481530, guid: df7bea53eaf5af4438f9a5104187c15e, type: 3}
       propertyPath: 'cards.Array.data[10]'
@@ -720,7 +720,7 @@ PrefabInstance:
     - target: {fileID: 1210240002159481530, guid: df7bea53eaf5af4438f9a5104187c15e, type: 3}
       propertyPath: 'handDeck.Array.data[2]'
       value: 
-      objectReference: {fileID: 11400000, guid: e0416256baa90eb438ad5ad6588a679c, type: 2}
+      objectReference: {fileID: 11400000, guid: 13918fad292e49741823072320a4d61a, type: 2}
     - target: {fileID: 1210240002159481530, guid: df7bea53eaf5af4438f9a5104187c15e, type: 3}
       propertyPath: 'handDeck.Array.data[3]'
       value: 
@@ -728,11 +728,11 @@ PrefabInstance:
     - target: {fileID: 1210240002159481530, guid: df7bea53eaf5af4438f9a5104187c15e, type: 3}
       propertyPath: 'handDeck.Array.data[4]'
       value: 
-      objectReference: {fileID: 11400000, guid: 13918fad292e49741823072320a4d61a, type: 2}
+      objectReference: {fileID: 11400000, guid: e0416256baa90eb438ad5ad6588a679c, type: 2}
     - target: {fileID: 1210240002159481530, guid: df7bea53eaf5af4438f9a5104187c15e, type: 3}
       propertyPath: 'handDeck.Array.data[5]'
       value: 
-      objectReference: {fileID: 11400000, guid: 13918fad292e49741823072320a4d61a, type: 2}
+      objectReference: {fileID: 11400000, guid: e0416256baa90eb438ad5ad6588a679c, type: 2}
     - target: {fileID: 1210240002159481530, guid: df7bea53eaf5af4438f9a5104187c15e, type: 3}
       propertyPath: 'handDeck.Array.data[6]'
       value: 
@@ -907,6 +907,30 @@ PrefabInstance:
       propertyPath: inventoryUIScrollView
       value: 
       objectReference: {fileID: 6963419224570285688, guid: 552b66b90977a404b8426a8a3fecf514, type: 3}
+    - target: {fileID: 468855255597921346, guid: 4860df683c2daca4a8ecae6d094955c7, type: 3}
+      propertyPath: <displayableCards>k__BackingField
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 468855255597921346, guid: 4860df683c2daca4a8ecae6d094955c7, type: 3}
+      propertyPath: cardReshuffleCurve.m_Curve.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 468855255597921346, guid: 4860df683c2daca4a8ecae6d094955c7, type: 3}
+      propertyPath: cardReshuffleCurve.m_Curve.Array.data[1].time
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 468855255597921346, guid: 4860df683c2daca4a8ecae6d094955c7, type: 3}
+      propertyPath: cardReshuffleCurve.m_Curve.Array.data[1].value
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 468855255597921346, guid: 4860df683c2daca4a8ecae6d094955c7, type: 3}
+      propertyPath: cardReshuffleCurve.m_Curve.Array.data[1].inSlope
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 468855255597921346, guid: 4860df683c2daca4a8ecae6d094955c7, type: 3}
+      propertyPath: cardReshuffleCurve.m_Curve.Array.data[1].outSlope
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 6931396666026497424, guid: 4860df683c2daca4a8ecae6d094955c7, type: 3}
       propertyPath: m_LocalPosition.x
       value: -1063.0405

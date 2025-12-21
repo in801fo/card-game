@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -107,4 +108,20 @@ public class Card : MonoBehaviour
         return base.GetHashCode();
     }
 
+    public IEnumerator AnimateCard(cardReshuffleAnimationParams parameters)
+    {
+        float elapsedTime = 0;
+
+        while (elapsedTime < parameters.duration)
+        {
+            float curveValue = parameters.curve.Evaluate(elapsedTime / parameters.duration);
+
+            transform.parent.position = Vector3.Lerp(this.transform.parent.position, parameters.targetPosition, curveValue);
+
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        transform.parent.position = parameters.targetPosition;
+    }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class InventoryManager : MonoBehaviour
@@ -7,6 +8,8 @@ public class InventoryManager : MonoBehaviour
     [SerializeField] private List<CardScriptable> handDeck = new List<CardScriptable>();
 
     private List<CardScriptable> sideDeck = new List<CardScriptable>();
+
+    public static Action<CardScriptable> OnCardAddedToHandDeck;
 
 
     public static InventoryManager Instance;
@@ -21,12 +24,18 @@ public class InventoryManager : MonoBehaviour
 
     private void Start()
     {
-        CardInteractionManager.OnCardUse += OnCardUseHandler;
+        CardInteractionManager.OnCardUse += HandleCardUse;
     }
 
     public void AddCard(CardScriptable card)
     {
         handDeck.Add(card);
+        OnCardAddedToHandDeck?.Invoke(card);
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Return)) AddCard((CardScriptable)ScriptableObject.CreateInstance(nameof(CardScriptable)));
     }
 
     /// <summary>
@@ -47,7 +56,7 @@ public class InventoryManager : MonoBehaviour
         sideDeck.Remove(card);
     }
     
-    private void OnCardUseHandler(Card card)
+    private void HandleCardUse(Card card)
     {
         RemoveCard(card, true);
     }
@@ -86,7 +95,7 @@ public class InventoryManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        CardInteractionManager.OnCardUse -= OnCardUseHandler;
+        CardInteractionManager.OnCardUse -= HandleCardUse;
     }
 
     public int GetHandDeckCount()

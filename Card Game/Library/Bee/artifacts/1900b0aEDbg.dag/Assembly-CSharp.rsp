@@ -414,6 +414,7 @@
 -analyzer:"C:/Program Files/Unity/Hub/Editor/6000.2.13f1/Editor/Data/Tools/Unity.SourceGenerators/Unity.UIToolkit.SourceGenerator.dll"
 "Assets/Scripts/Cards/Card.cs"
 "Assets/Scripts/Cards/CardEffectsEnum.cs"
+"Assets/Scripts/Cards/CardReshuffleAnimationParams.cs"
 "Assets/Scripts/Cards/CardScriptable.cs"
 "Assets/Scripts/Cards/CardTypeEnum.cs"
 "Assets/Scripts/Cards/DamageTypeEnum.cs"

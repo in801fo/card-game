@@ -52,6 +52,7 @@
     <Compile Include="Assets\Scripts\Managers\InventoryManager.cs" />
     <Compile Include="Assets\Scripts\Managers\ScreensManagers.cs" />
     <Compile Include="Assets\Scripts\Managers\InventoryUIManager.cs" />
+    <Compile Include="Assets\Scripts\Cards\CardReshuffleAnimationParams.cs" />
     <Compile Include="Assets\Scripts\Cards\CardTypeEnum.cs" />
     <Compile Include="Assets\Scripts\SetCanvasCamera.cs" />
     <Compile Include="Assets\Scripts\Cards\Card.cs" />

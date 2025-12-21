@@ -64,10 +64,12 @@ public class CardGenerationManager : MonoBehaviour
         List<CardScriptable> cards = cardScriptables == null ?
             InventoryManager.Instance.GetHandDeck() : cardScriptables;
 
-        int generationAmount = displayable != -1 ? displayable : cards.Count;
+        int generationAmount = displayable != -1 && displayable <= cards.Count ? displayable : cards.Count;
 
         for (int i = 0; i < generationAmount; i++)
         {
+            if (playerCards.FindIndex((Card card) => card.card.Equals(cards[i])) != -1) continue;
+            
             playerCards.Add(Instantiate(cardPrefab, Vector3.zero, Quaternion.Euler(new Vector3(0, 0, 90))).GetComponentInChildren<Card>());
             SetUpGameCard(cards[i], playerCards[i]);
         }
