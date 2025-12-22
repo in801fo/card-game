@@ -228,8 +228,8 @@
     <Compile Include="Library\PackageCache\com.unity.visualscripting@b4d700247d4b\Editor\VisualScripting.Core\Plugins\IPluginLinked.cs" />
     <Compile Include="Library\PackageCache\com.unity.visualscripting@b4d700247d4b\Editor\VisualScripting.Core\Analysis\IGraphElementAnalysis.cs" />
     <Compile Include="Library\PackageCache\com.unity.visualscripting@b4d700247d4b\Editor\VisualScripting.Core\Inspection\Unity\LayerMaskInspector.cs" />
-    <Compile Include="Library\PackageCache\com.unity.visualscripting@b4d700247d4b\Editor\VisualScripting.Core\Interface\Licenses\License.Iconmonstr.cs" />
     <Compile Include="Library\PackageCache\com.unity.visualscripting@b4d700247d4b\Editor\VisualScripting.Core\Interface\Colors\SkinnedColor.cs" />
+    <Compile Include="Library\PackageCache\com.unity.visualscripting@b4d700247d4b\Editor\VisualScripting.Core\Interface\Licenses\License.Iconmonstr.cs" />
     <Compile Include="Library\PackageCache\com.unity.visualscripting@b4d700247d4b\Editor\VisualScripting.Core\Utilities\LudiqEditorUtility.cs" />
     <Compile Include="Library\PackageCache\com.unity.visualscripting@b4d700247d4b\Editor\VisualScripting.Core\Plugin\BoltCoreResources.cs" />
     <Compile Include="Library\PackageCache\com.unity.visualscripting@b4d700247d4b\Editor\VisualScripting.Core\Inspection\Unity\RayInspector.cs" />

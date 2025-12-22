@@ -48,10 +48,7 @@
     <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.2.13f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\Managers\CardGenerationManager.cs" />
-    <Compile Include="Assets\Scripts\Managers\InventoryManager.cs" />
     <Compile Include="Assets\Scripts\Managers\ScreensManagers.cs" />
-    <Compile Include="Assets\Scripts\Managers\InventoryUIManager.cs" />
     <Compile Include="Assets\Scripts\Cards\CardReshuffleAnimationParams.cs" />
     <Compile Include="Assets\Scripts\Cards\CardTypeEnum.cs" />
     <Compile Include="Assets\Scripts\SetCanvasCamera.cs" />
@@ -59,16 +56,19 @@
     <Compile Include="Assets\Scripts\DebugUI\Save.cs" />
     <Compile Include="Assets\Scripts\DebugUI\UpdateDebugUI.cs" />
     <Compile Include="Assets\Scripts\Managers\GameManager.cs" />
+    <Compile Include="Assets\Scripts\Managers\Inventory\InventoryUIManager.cs" />
     <Compile Include="Assets\Scripts\DebugUI\ValueUpdater.cs" />
     <Compile Include="Assets\Scripts\Cards\DamageTypeEnum.cs" />
     <Compile Include="Assets\Scripts\DebugUI\DrawDebugUI.cs" />
+    <Compile Include="Assets\Scripts\Managers\Inventory\InventoryManager.cs" />
+    <Compile Include="Assets\Scripts\Managers\Cards\CardGenerationManager.cs" />
     <Compile Include="Assets\Scripts\Cards\CardEffectsEnum.cs" />
     <Compile Include="Assets\Scripts\DeckScriptable.cs" />
     <Compile Include="Assets\Scripts\DebugUI\Load.cs" />
     <Compile Include="Assets\Scripts\DebugUI\DebugUIManager.cs" />
     <Compile Include="Assets\Scripts\Managers\HpManager.cs" />
     <Compile Include="Assets\Scripts\Managers\UIManager.cs" />
-    <Compile Include="Assets\Scripts\Managers\CardInteractionManager.cs" />
+    <Compile Include="Assets\Scripts\Managers\Cards\CardInteractionManager.cs" />
     <Compile Include="Assets\Scripts\Cards\CardScriptable.cs" />
     <Compile Include="Assets\Scripts\DebugUI\RuntimeError.cs" />
     <Compile Include="Assets\Scripts\SceneReloader.cs" />
