@@ -74,6 +74,11 @@ public class InventoryUIManager : MonoBehaviour
 
     private void HandleCardHold(Card card)
     {
+        //stop the animating of the holded card
+        int coroutineIndex = cards.FindIndex((Card c) => c.card.Equals(card.card));
+        if(coroutineIndex != -1 && cardsCoroutines[coroutineIndex] != null) //if that happens it means that an animation hasn't happened yet...
+            StopCoroutine(cardsCoroutines[coroutineIndex]);
+
         InventoryManager.Instance.RemoveCard(card);
         this.cards.Remove(card);
         currentCardHolded = card;

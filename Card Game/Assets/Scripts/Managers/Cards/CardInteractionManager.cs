@@ -31,12 +31,12 @@ public class CardInteractionManager : MonoBehaviour
             if (RaycastForCard() && currentCardHover != currentSelected)
             {
                 currentSelected = currentCardHover;
-                hasPressedDown = true; 
+                hasPressedDown = true;
                 RuntimeError.Info("New Card!", "Selected New Card: " + currentSelected.card.Name);
             }
         }
 
-        
+
         if (Input.GetKey(KeyCode.Mouse0))
         {
             if (RaycastForCard())
@@ -45,7 +45,7 @@ public class CardInteractionManager : MonoBehaviour
                 wasHolding = true;
             }
         }
-        
+
         //for when releasing
         if (Input.GetKeyUp(KeyCode.Mouse0))
         {
@@ -60,7 +60,7 @@ public class CardInteractionManager : MonoBehaviour
             hasPressedDown = false;
             wasHolding = false;
         }
-        
+
 
 
         if (Input.GetKeyDown(KeyCode.Mouse1))
@@ -70,6 +70,15 @@ public class CardInteractionManager : MonoBehaviour
                 RuntimeError.Info("Get info for card: " + currentCardHover);
                 InventoryUIManager.GetCardInfoScreen(currentCardHover.card);
             }
+        }
+    }
+
+    private void FixedUpdate()
+    {
+        if (!wasHolding)
+        {
+            if(RaycastForCard())
+                OnCardCursorHover?.Invoke(currentCardHover);
         }
     }
 
@@ -99,7 +108,6 @@ public class CardInteractionManager : MonoBehaviour
         }
         else currentCardHover = null;
         
-        OnCardCursorHover?.Invoke(currentCardHover);
         return res;
     }
 
@@ -108,8 +116,4 @@ public class CardInteractionManager : MonoBehaviour
         OnCardUse?.Invoke(currentSelected);
     }
 
-    private void FixedUpdate()
-    {
-        if(!wasHolding) RaycastForCard();
-    }
 }
