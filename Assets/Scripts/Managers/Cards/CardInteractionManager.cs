@@ -32,7 +32,7 @@ public class CardInteractionManager : MonoBehaviour
             {
                 currentSelected = currentCardHover;
                 hasPressedDown = true;
-                RuntimeError.Info("New Card!", "Selected New Card: " + currentSelected.card.Name);
+                //RuntimeError.Info("New Card!", "Selected New Card: " + currentSelected.card.Name);
             }
         }
 

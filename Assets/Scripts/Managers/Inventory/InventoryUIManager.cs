@@ -1,17 +1,15 @@
 using System;
 using System.Collections.Generic;
-using UnityEditor.AssetImporters;
 using UnityEngine;
-using UnityEngine.Animations;
 
-public class InventoryUIManager : MonoBehaviour
+public class InventoryUIManager : CoordinatedMonoBehaviour
 {
 
     [Range(1, 10)]
     [SerializeField] private float spacingCards = 1.5f;
     [Range(0, 1)]
     [SerializeField] private float borderDistance;
-    [SerializeField] private float defaultCameraDistance = 24f;
+    [SerializeField] private float defaultCameraDistance = 15f;
     [SerializeField] private AnimationCurve cardReshuffleCurve;
     [SerializeField] private float cardReshuffleSpeed = 2.5f;
     [field: SerializeField] public int displayableCards { get; private set; } = 0;
@@ -33,21 +31,24 @@ public class InventoryUIManager : MonoBehaviour
 
     private const string effectsLabel = "effectsList";
 
-    public void Awake()
+    protected override void Awake()
     {
+        base.Awake();
         defaultCameraDistance += Camera.main.nearClipPlane;
     }
 
-    private void Start()
+    protected override void Beginning()
     {
         GenerateReferenceCard();
-        worldStartSpawn = Camera.main.ViewportToWorldPoint(new Vector3(0, 0, defaultCameraDistance));
+        worldStartSpawn = Camera.main.ViewportToWorldPoint(new Vector3(0, .100f, defaultCameraDistance));
         cardsWorldWidth = referenceCardRenderer.bounds.max.x - referenceCardRenderer.bounds.min.x;
         spaceOccupiedByCard = cardsWorldWidth + (cardsWorldWidth * (spacingCards - 1));
 
         InventoryManager.OnCardAddedToHandDeck += HandleCardAdded;
         CardInteractionManager.OnCardHold += HandleCardHold;
         CardInteractionManager.OnCardRelease += HandleCardRelease;
+
+        //defaultCardWorldPos = Camera.main.ViewportToWorldPoint(new Vector3(0, .2f, defaultCameraDistance));
 
         HandleCardGeneration();
     }
@@ -125,21 +126,20 @@ public class InventoryUIManager : MonoBehaviour
     }
 
 
-    private void Update()
+    protected override void ReadyUpdate()
     {
         //saving the number of displayable cards before updating
         //doing this as the number displayable cards only changes when either
         //the actual number of cards has changed
         //or when the spacing between cards has changed
         //TODO: Reby is very very very very very very very very racist (she drives cars)
-        #if UNITY_EDITOR
+        //#if UNITY_EDITOR
         int currentDisplayable = displayableCards;
         float currentOccupied = spaceOccupiedByCard;
         CalculateDisplayebleCards();
         UpdateCardSpace();
         if (cards != null && (currentDisplayable != displayableCards || currentOccupied != spaceOccupiedByCard))
             HandleAnimateCards();
-#endif
 
         if (currentCardHolded != null)
         {
@@ -163,15 +163,21 @@ public class InventoryUIManager : MonoBehaviour
         Position(this.cards);
     }
 
-    private Vector3 CalculateCardTargetPosition(float borderStartX, int cardsBeforeCurrent)
+    private Vector3 CalculateCardTargetPosition(float borderStartX, int cardsBeforeCurrent, float y, float z)
     {
         return
             new Vector3(
                 //+ spaceOccupiedByCard/2 --> doing this to fix a small centering problem...
                 borderStartX + (spaceOccupiedByCard * cardsBeforeCurrent) + (spaceOccupiedByCard / 2),
-                worldStartSpawn.y,
-                worldStartSpawn.z
+                y,
+                z
             );
+    }
+
+    private Vector3 CalculateCardTargetPosition(float borderStartX, int cardsBeforeCurrent)
+    {
+        return
+            CalculateCardTargetPosition(borderStartX, cardsBeforeCurrent, worldStartSpawn.y, worldStartSpawn.z);
     }
 
     /// <summary>
@@ -207,7 +213,7 @@ public class InventoryUIManager : MonoBehaviour
     
     private Vector2 GetScreenBorderForCards(int cardsCount)
     {
-        return new Vector2(Camera.main.ScreenToWorldPoint(new Vector3(Screen.width / 2, 0, defaultCameraDistance + Camera.main.nearClipPlane)).x
+        return new Vector2(Camera.main.ScreenToWorldPoint(new Vector3(Screen.width / 2, 0, defaultCameraDistance)).x
          - (spaceOccupiedByCard * cardsCount / 2), 0);
     }
 
@@ -240,7 +246,7 @@ public class InventoryUIManager : MonoBehaviour
             new Vector3(
                 renderer.bounds.min.x,
                 renderer.bounds.max.y,
-                defaultCameraDistance + Camera.main.nearClipPlane
+                defaultCameraDistance
                 )
             );
 
@@ -248,7 +254,7 @@ public class InventoryUIManager : MonoBehaviour
             new Vector3(
                 renderer.bounds.max.x,
                 renderer.bounds.min.y,
-                defaultCameraDistance + Camera.main.nearClipPlane
+                defaultCameraDistance
                 )
             );
 
@@ -283,6 +289,8 @@ public class InventoryUIManager : MonoBehaviour
     private void OnDestroy()
     {
         InventoryManager.OnCardAddedToHandDeck -= HandleCardAdded;
+        GameManager.OnDoneGenerating -= Beginning;
+
     }
 
 }

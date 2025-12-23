@@ -109,7 +109,7 @@ public class DrawDebugUI : MonoBehaviour
     /// </summary>
     /// <param name="value">The main object from which to generate the UI</param>
     /// <param name="allowRecursiveSerialization">Allows the serialization of fields of complex types withing the provided object</param>
-    public void GenerateUIForValue(object value, bool allowRecursiveSerialization)
+    public void GenerateDebugUIForValue(object value, bool allowRecursiveSerialization)
     {
         if (!isExpanding) mainSerializingObject = value;
 
@@ -134,7 +134,7 @@ public class DrawDebugUI : MonoBehaviour
     //separated the two because it wasn't worth the risk exposing the param "isExpanding" as an optional parameter
     private void RecursiveGenerateUI(object value, bool isExpanding){
         this.isExpanding = isExpanding;
-        GenerateUIForValue(value, false);
+        GenerateDebugUIForValue(value, false);
         this.isExpanding = false;
     }
 
@@ -204,7 +204,7 @@ public class DrawDebugUI : MonoBehaviour
 
     public void RefreshUI(){
         DestroyOutdatedUI();
-        GenerateUIForValue(mainSerializingObject, true);
+        GenerateDebugUIForValue(mainSerializingObject, true);
     }
 
 }

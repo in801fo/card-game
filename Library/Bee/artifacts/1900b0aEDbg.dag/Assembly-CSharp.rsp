@@ -418,6 +418,7 @@
 "Assets/Scripts/Cards/CardScriptable.cs"
 "Assets/Scripts/Cards/CardTypeEnum.cs"
 "Assets/Scripts/Cards/DamageTypeEnum.cs"
+"Assets/Scripts/CoordinatedMonoBehaviour.cs"
 "Assets/Scripts/DebugUI/DebugUIManager.cs"
 "Assets/Scripts/DebugUI/DrawDebugUI.cs"
 "Assets/Scripts/DebugUI/Load.cs"
@@ -433,7 +434,6 @@
 "Assets/Scripts/Managers/Inventory/InventoryManager.cs"
 "Assets/Scripts/Managers/Inventory/InventoryUIManager.cs"
 "Assets/Scripts/Managers/ScreensManagers.cs"
-"Assets/Scripts/Managers/UIManager.cs"
 "Assets/Scripts/SceneReloader.cs"
 "Assets/Scripts/SetCanvasCamera.cs"
 -langversion:9.0

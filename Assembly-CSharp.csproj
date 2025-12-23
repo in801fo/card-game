@@ -65,9 +65,9 @@
     <Compile Include="Assets\Scripts\Cards\CardEffectsEnum.cs" />
     <Compile Include="Assets\Scripts\DeckScriptable.cs" />
     <Compile Include="Assets\Scripts\DebugUI\Load.cs" />
+    <Compile Include="Assets\Scripts\CoordinatedMonoBehaviour.cs" />
     <Compile Include="Assets\Scripts\DebugUI\DebugUIManager.cs" />
     <Compile Include="Assets\Scripts\Managers\HpManager.cs" />
-    <Compile Include="Assets\Scripts\Managers\UIManager.cs" />
     <Compile Include="Assets\Scripts\Managers\Cards\CardInteractionManager.cs" />
     <Compile Include="Assets\Scripts\Cards\CardScriptable.cs" />
     <Compile Include="Assets\Scripts\DebugUI\RuntimeError.cs" />

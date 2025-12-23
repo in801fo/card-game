@@ -63,7 +63,7 @@ public class Card : MonoBehaviour
         
         this.card = card;
     }
-    
+
     private void SetCardUVs(Mesh mesh, float cardFrontOffset)
     {
         List<Vector2> uvs = new List<Vector2>();
@@ -80,6 +80,11 @@ public class Card : MonoBehaviour
         }
 
         mesh.SetUVs(0, uvs);
+    }
+    
+    private void FixedUpdate()
+    {
+        this.transform.parent.rotation = Quaternion.LookRotation(this.transform.parent.position - Camera.main.transform.position) * Quaternion.Euler(Vector3.forward * 90);
     }
 
     public void SetUpInfoCard(CardScriptable card)

@@ -20,7 +20,6 @@ public class CardGenerationManager : MonoBehaviour
     private List<Card> playerCards = new List<Card>();
 
     public static Action<List<Card>> OnGenerationDone;
-    public static Action<Card> OnFirstCardGenerated;
 
     public static CardGenerationManager Instance;
 
@@ -59,20 +58,27 @@ public class CardGenerationManager : MonoBehaviour
         return res;
     }
 
+    /// <summary>
+    /// Generates the provided <code>CardScriptables</code>
+    /// </summary>
+    /// <param name="displayable">How many cards are displayable? <para> If left at -1 all the cards in the hand deck will be spawned</para>
+    /// <para>If set, only the number of cards indicated will be spawned</para> </param>
+    /// <param name="cardScriptables">The list of cards to spawn</param>
+    /// <returns></returns>
     public List<Card> GenerateCards(int displayable = -1, List<CardScriptable> cardScriptables = null)
     {
         List<CardScriptable> cards = cardScriptables == null ?
             InventoryManager.Instance.GetHandDeck() : cardScriptables;
 
-        int generationAmount = displayable != -1 && displayable <= cards.Count ? displayable : cards.Count;
+        int generationAmount = displayable >= 0 && displayable <= cards.Count ? displayable : cards.Count;
 
         for (int i = 0; i < generationAmount; i++)
         {
             if (playerCards.FindIndex(
                     (Card card) => card.card.Equals(cards[i])
-                ) != -1) 
+                ) != -1)
                 continue;
-            
+
             playerCards.Add(Instantiate(cardPrefab, Vector3.zero, Quaternion.Euler(new Vector3(0, 0, 90))).GetComponentInChildren<Card>());
             SetUpGameCard(cards[i], playerCards[i]);
         }
@@ -80,6 +86,10 @@ public class CardGenerationManager : MonoBehaviour
         return playerCards;
     }
 
+    /// <summary>
+    /// Generates a card which is used as reference for rendering all the others
+    /// </summary>
+    /// <returns>The reference card</returns>
     public Card GenerateRefCard()
     {
         if (refCard != null) return refCard;

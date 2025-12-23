@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class SetCanvasCamera : MonoBehaviour
 {
-    [SerializeField] private Camera camera;
+    [SerializeField] private new Camera camera;
 
     private void Start()
     {

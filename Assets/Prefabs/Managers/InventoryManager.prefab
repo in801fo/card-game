@@ -44,9 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 169e7cd696ba8ea44b2d99fe6ecef304, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InventoryManager
-  cards:
-  - {fileID: 11400000, guid: e0416256baa90eb438ad5ad6588a679c, type: 2}
-  - {fileID: 11400000, guid: 13918fad292e49741823072320a4d61a, type: 2}
-  - {fileID: 11400000, guid: 8fd08bb11b10bb54bbde0e4df875a28a, type: 2}
+  handDeck:
   - {fileID: 11400000, guid: 69c625f3b8a1d8e49bbe57052a488e67, type: 2}
   - {fileID: 11400000, guid: 73159b8bc62f497499d85fea5d13f205, type: 2}
+  - {fileID: 11400000, guid: e0416256baa90eb438ad5ad6588a679c, type: 2}

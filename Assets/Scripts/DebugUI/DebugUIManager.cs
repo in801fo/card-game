@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -16,7 +17,6 @@ public class DebugUIManager : MonoBehaviour
 
     public static DrawDebugUI drawer {get;  private set;}
     public static UpdateDebugUI changer {get;  private set;}
-    public static RuntimeError runtimeErrorDisplay {get;  private set;}
     //could make an enum 
     private static List<string> _defaultTypes = new List<string>(new string[] { "System.Single", "System.Int32", "System.String", "System.Boolean" });
     public static List<string> defaultTypes { 
@@ -24,10 +24,10 @@ public class DebugUIManager : MonoBehaviour
         private set{}
     } 
 
-    private void Start(){
+    private void Awake(){
         drawer = Instantiate(_drawer.gameObject).GetComponent<DrawDebugUI>();
         changer = Instantiate(_changer.gameObject).GetComponent<UpdateDebugUI>();
-        runtimeErrorDisplay = Instantiate(_runtimeErrorDisplay.gameObject).GetComponent<RuntimeError>();
+        Instantiate(_runtimeErrorDisplay.gameObject).GetComponent<RuntimeError>();
         if (!EventSystem.current) CreateEventSystem();
     }
 
@@ -38,14 +38,15 @@ public class DebugUIManager : MonoBehaviour
         eventSystem.AddComponent<StandaloneInputModule>();
     }
 
-    public void GenerateUIForValue(object value, bool serializeRecursively, bool isReadOnly){
+    public static void GenerateUIForValue(object value, bool serializeRecursively, bool isReadOnly){
         serializingObject = value;
         mainObjectFields = serializingObject.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy).ToList();
-        drawer.GenerateUIForValue(value, serializeRecursively);
+        drawer.GenerateDebugUIForValue(value, serializeRecursively);
         if (!isReadOnly) changer.StartVariableUpdate(value);
     }
 
     public static bool HasToBeExpanded(object propertyValue){
+        if (propertyValue == null) return false;
         return !defaultTypes.Contains(propertyValue.GetType().ToString());
     }
 

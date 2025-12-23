@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
-public class InventoryManager : MonoBehaviour
+public class InventoryManager : CoordinatedMonoBehaviour
 {
     [SerializeField] private List<CardScriptable> handDeck = new List<CardScriptable>();
 
@@ -14,13 +13,14 @@ public class InventoryManager : MonoBehaviour
     public static InventoryManager Instance;
     public Action OnZeroCards;
 
-    private void Awake()
+    protected override void Awake()
     {
+        base.Awake();
         if (!Instance) Instance = this;
         else Destroy(this);
     }
 
-    private void Start()
+    protected override void Beginning()
     {
         CardInteractionManager.OnCardUse += HandleCardUse;
     }
@@ -37,7 +37,7 @@ public class InventoryManager : MonoBehaviour
         if(signal)OnCardAddedToHandDeck?.Invoke(card);
     }
 
-    private void Update()
+    protected override void ReadyUpdate()
     {
         if (Input.GetKeyDown(KeyCode.Return)) 
             AddCard((CardScriptable)ScriptableObject.CreateInstance(nameof(CardScriptable)));
@@ -97,13 +97,14 @@ public class InventoryManager : MonoBehaviour
         return handDeck;
     }
 
-    private void OnDestroy()
-    {
-        CardInteractionManager.OnCardUse -= HandleCardUse;
-    }
-
     public int GetHandDeckCount()
     {
         return handDeck.Count;
+    }
+
+    private void OnDestroy()
+    {
+        CardInteractionManager.OnCardUse -= HandleCardUse;
+        GameManager.OnDoneGenerating -= Beginning;
     }
 }
