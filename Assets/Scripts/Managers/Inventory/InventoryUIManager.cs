@@ -12,6 +12,8 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
     [SerializeField] private float defaultCameraDistance = 15f;
     [SerializeField] private AnimationCurve cardReshuffleCurve;
     [SerializeField] private float cardReshuffleSpeed = 2.5f;
+    [SerializeField] private float yCurveMultiplier;
+    [SerializeField] private float cardZDistance;
     [field: SerializeField] public int displayableCards { get; private set; } = 0;
     private List<Card> cards;
     private MeshRenderer referenceCardRenderer;
@@ -34,7 +36,7 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
     protected override void Awake()
     {
         base.Awake();
-        defaultCameraDistance += Camera.main.nearClipPlane;
+        defaultCameraDistance += Camera.main.nearClipPlane + cardZDistance;
     }
 
     protected override void Beginning()
@@ -48,7 +50,6 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
         CardInteractionManager.OnCardHold += HandleCardHold;
         CardInteractionManager.OnCardRelease += HandleCardRelease;
 
-        //defaultCardWorldPos = Camera.main.ViewportToWorldPoint(new Vector3(0, .2f, defaultCameraDistance));
 
         HandleCardGeneration();
     }
@@ -163,6 +164,14 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
         Position(this.cards);
     }
 
+    /// <summary>
+    /// Calculates the position at which a card has to go in the hand deck
+    /// </summary>
+    /// <param name="borderStartX">The x position of the screen border from which to start spawning the cards</param>
+    /// <param name="cardsBeforeCurrent"></param>
+    /// <param name="y"></param>
+    /// <param name="z"></param>
+    /// <returns></returns>
     private Vector3 CalculateCardTargetPosition(float borderStartX, int cardsBeforeCurrent, float y, float z)
     {
         return
@@ -170,14 +179,17 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
                 //+ spaceOccupiedByCard/2 --> doing this to fix a small centering problem...
                 borderStartX + (spaceOccupiedByCard * cardsBeforeCurrent) + (spaceOccupiedByCard / 2),
                 y,
-                z
+                z + cardZDistance
             );
     }
 
     private Vector3 CalculateCardTargetPosition(float borderStartX, int cardsBeforeCurrent)
     {
+        float yOffset = (cards != null /*&& cards.Count % 2 == 1*/) ? Mathf.Abs((cards.Count / 2) - cardsBeforeCurrent) : 0;
+        RuntimeError.Info(yOffset.ToString());
+        float y = worldStartSpawn.y - (yOffset * yCurveMultiplier);
         return
-            CalculateCardTargetPosition(borderStartX, cardsBeforeCurrent, worldStartSpawn.y, worldStartSpawn.z);
+            CalculateCardTargetPosition(borderStartX, cardsBeforeCurrent, y, worldStartSpawn.z);
     }
 
     /// <summary>

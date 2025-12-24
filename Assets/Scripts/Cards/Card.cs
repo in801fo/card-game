@@ -84,7 +84,7 @@ public class Card : MonoBehaviour
     
     private void FixedUpdate()
     {
-        this.transform.parent.rotation = Quaternion.LookRotation(this.transform.parent.position - Camera.main.transform.position) * Quaternion.Euler(Vector3.forward * 90);
+        if(!isInfoCard) this.transform.parent.rotation = Quaternion.LookRotation(this.transform.parent.position - Camera.main.transform.position) * Quaternion.Euler(Vector3.forward * 90);
     }
 
     public void SetUpInfoCard(CardScriptable card)

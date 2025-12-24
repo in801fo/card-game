@@ -57,6 +57,7 @@ public class CardInteractionManager : MonoBehaviour
                     HandleCardRelease();
             }
 
+            currentSelected = null;
             hasPressedDown = false;
             wasHolding = false;
         }
@@ -77,8 +78,8 @@ public class CardInteractionManager : MonoBehaviour
     {
         if (!wasHolding)
         {
-            if(RaycastForCard())
-                OnCardCursorHover?.Invoke(currentCardHover);
+            RaycastForCard();
+            OnCardCursorHover?.Invoke(currentCardHover);
         }
     }
 
@@ -103,11 +104,11 @@ public class CardInteractionManager : MonoBehaviour
             //if the currentCardHover is not equal to the current card then
             //execute the shit
             if (currentCardHover == null || !currentCardHover.Equals(card))
-                currentCardHover = card; //otherwhise set it to null
+                currentCardHover = card; 
 
         }
-        else currentCardHover = null;
-        
+        else currentCardHover = null;//otherwhise set it to null
+
         return res;
     }
 

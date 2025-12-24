@@ -78,7 +78,7 @@ public class CardGenerationManager : MonoBehaviour
                     (Card card) => card.card.Equals(cards[i])
                 ) != -1)
                 continue;
-
+            
             playerCards.Add(Instantiate(cardPrefab, Vector3.zero, Quaternion.Euler(new Vector3(0, 0, 90))).GetComponentInChildren<Card>());
             SetUpGameCard(cards[i], playerCards[i]);
         }

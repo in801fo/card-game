@@ -44,9 +44,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a0c8c227f6f8d647a538d0de8949595, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InventoryUIManager
-  spacingCards: 3
+  spacingCards: 1.5
   borderDistance: 0
-  defaultCameraDistance: 24
+  defaultCameraDistance: 14.6
   cardReshuffleCurve:
     serializedVersion: 2
     m_Curve:
@@ -72,4 +72,6 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   cardReshuffleSpeed: 2.5
+  yCurveMultiplier: 1
+  cardZDistance: 5
   <displayableCards>k__BackingField: 0

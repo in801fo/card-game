@@ -52,9 +52,6 @@ public class GameManager : MonoBehaviour
         if (count == actualInheriting) OnDoneGenerating?.Invoke();
     }
 
-    public static void ValidateInitialization()
-    {
-        count++;
-    }
+    public static void ValidateInitialization(){ count++; }
     
 }
