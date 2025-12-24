@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class UpdateDebugUI : MonoBehaviour{
@@ -14,6 +15,8 @@ public class UpdateDebugUI : MonoBehaviour{
     private List<FieldInfo> fieldCache = new List<FieldInfo>();
 
     private bool modifySubField;
+
+    private List<string> avoidUpdateFields = new List<string>();
     public class ParsingException : Exception{
 
         private object failedObject;
@@ -42,7 +45,9 @@ public class UpdateDebugUI : MonoBehaviour{
         else Destroy(this);
     }
 
-    public void StartVariableUpdate(object serializedObject){
+    public void StartVariableUpdate(object serializedObject, List<string> avoidUpdateFields = null)
+    {
+        if(avoidUpdateFields != null && avoidUpdateFields.Count > 0) this.avoidUpdateFields = avoidUpdateFields;
         this.mainSerializedObject = serializedObject;
     }
 
@@ -55,20 +60,30 @@ public class UpdateDebugUI : MonoBehaviour{
     public void UpdateValue<T>(string varName, T value){
         //if the varName contains a . that means that it's a "path"
         //to the actual variable to update
-       
+
+        //this means that the field shall not be updated
+        if (avoidUpdateFields.Contains(varName)) return;
+
         modifySubField = varName.Contains('.');
+        
 
         FieldInfo variable = null;
         int varIndex = 0;
+
+        //if you don't need to update subfields
         if (!modifySubField){
 
+            //search through the cached fields...
             varIndex = fieldCache.FindIndex(info => info.Name.Equals(varName) && info.DeclaringType.Name.Equals(mainSerializedObject.GetType().Name));
+            //in the case in which you don't find it
             if (varIndex == -1){
-                
+
                 print("cacheMiss");
+                //update the cache
                 fieldCache.Clear();
-                FieldInfo[] fields = mainSerializedObject.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
+                FieldInfo[] fields = DebugUIManager.mainObjectFields.ToArray();
                 fieldCache = new List<FieldInfo>(fields);
+                //search again...
                 varIndex = fieldCache.FindIndex(info => info.Name.Equals(varName) && info.DeclaringType.Name.Equals(mainSerializedObject.GetType().Name));
             }
         }
@@ -81,10 +96,9 @@ public class UpdateDebugUI : MonoBehaviour{
 //        print("fieldOwner " + fieldOwner.GetType() + " " + fieldOwner + " var: " + variable);
 
         if (variable == null)
-        {
 //            print("Governo ladro");
             return;
-        }
+        
 
         object sanitizedValue = SanitizeInput(value.ToString(), variable.FieldType);
 
@@ -92,13 +106,16 @@ public class UpdateDebugUI : MonoBehaviour{
 
         if (sanitizedValue == null) return;
 
-        //if you have to modify a subfield
+        //if you have to modify a subfield (only one level of subfields is serialized therefore only
+        //setting the first level of sub fields...)
         if (modifySubField){
-            print(varName);
+            //print(varName);
             //modify the desired field on a copy of the main field (fieldOwner) with the sanitized value
-            fieldOwner.GetType().GetField(variable.Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy).SetValue(fieldOwner, sanitizedValue);
+            fieldOwner.GetType().GetField(variable.Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy)
+                .SetValue(fieldOwner, sanitizedValue);
             //use that copy to set the entire value of the original main field 
-            mainSerializedObject.GetType().GetField(varName.Substring(0, varName.IndexOf('.'))).SetValue(mainSerializedObject, fieldOwner);
+            mainSerializedObject.GetType().GetField(varName.Substring(0, varName.IndexOf('.')))
+                .SetValue(mainSerializedObject, fieldOwner);
         }
         else variable.SetValue(fieldOwner, sanitizedValue);
     }
@@ -162,10 +179,11 @@ public class UpdateDebugUI : MonoBehaviour{
         if (value.Contains('.')) value = value.Replace('.', ',');
         /*a hash set creates a unique id for each element in it
         id doesn't allow for any duplicate of an item to be added*/
-        HashSet<char> set = new HashSet<char>();
+        //idk why I was doing this...
+        /*HashSet<char> set = new HashSet<char>();
 
         value = new string(value.Where(c => set.Add(c)).ToArray());
-
+*/
 //        print("first sanitization: " + value);
 
         if (valueType.ToString().Equals("System.Single"))

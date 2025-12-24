@@ -1,0 +1,16 @@
+spacingCards: 1.
+borderDistance: 0.
+defaultCameraDistance: 19,9.
+cardReshuffleCurve:m_Ptr: 1778666504800|m_RequiresNativeCleanup: True|.
+cardReshuffleSpeed: 2,5.
+yCurveMultiplier: 0,25.
+cardZDistance: 5.
+<displayableCards>k__BackingField: 19.
+cards:_items: Card[]|_size: 10|_version: 10|_syncRoot: null|.
+referenceCardRenderer:.
+spaceOccupiedByCard: 2.
+worldStartSpawn:x: -12,32711|y: -7,116485|z: 1,715005|.
+cardsCoroutines:.
+currentCardHolded: null.
+cardsWorldWidth: 2.
+ 2.

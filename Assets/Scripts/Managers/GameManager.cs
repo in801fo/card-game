@@ -45,7 +45,14 @@ public class GameManager : MonoBehaviour
         DontDestroyOnLoad(managers[managers.Count - 1]);
 
         //generates the debug menu which drives all the fields in the inventoryUI
-        DebugUIManager.GenerateUIForValue(inventoryUiManager, false, false);
+        DebugUIManager.GenerateUIForValue(inventoryUiManager, false, false, new List<string>()
+        {
+            "displayableCards",
+            "referenceCardRenderer",
+            "spaceOccupiedByCard",
+            "cardsCoroutines",
+            "currentCardHolded"
+        });
 
         //if the number of CoordinatedMonoBehaviours is equal to the actual which inherited that means that all of them have
         //completed their initialization 

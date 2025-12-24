@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using UnityEngine;
 
 public class InventoryUIManager : CoordinatedMonoBehaviour
@@ -133,7 +134,6 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
         //doing this as the number displayable cards only changes when either
         //the actual number of cards has changed
         //or when the spacing between cards has changed
-        //TODO: Reby is very very very very very very very very racist (she drives cars)
         //#if UNITY_EDITOR
         int currentDisplayable = displayableCards;
         float currentOccupied = spaceOccupiedByCard;
@@ -186,7 +186,6 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
     private Vector3 CalculateCardTargetPosition(float borderStartX, int cardsBeforeCurrent)
     {
         float yOffset = (cards != null /*&& cards.Count % 2 == 1*/) ? Mathf.Abs((cards.Count / 2) - cardsBeforeCurrent) : 0;
-        RuntimeError.Info(yOffset.ToString());
         float y = worldStartSpawn.y - (yOffset * yCurveMultiplier);
         return
             CalculateCardTargetPosition(borderStartX, cardsBeforeCurrent, y, worldStartSpawn.z);

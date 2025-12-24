@@ -50,9 +50,15 @@ public class Load : MonoBehaviour
             return;
         }
 
-        for(int i = 0; i < fileLines.Length; i++){
+        for (int i = 0; i < fileLines.Length; i++)
+        {
             if (string.IsNullOrEmpty(fileLines[i]) || string.IsNullOrWhiteSpace(fileLines[i])) continue;
-//            print("line:" + fileLines[i]);
+            //            print("line:" + fileLines[i]);
+            int fieldStarterPos = fileLines[i].IndexOf(generalFieldStart);
+            if (fieldStarterPos == -1){
+                RuntimeError.Warning("Unable to parse value", $"Unable to parse value {fileLines[i]}, skipping...");
+                continue;
+            }
             string varName = fileLines[i].Substring(0, fileLines[i].IndexOf(generalFieldStart));
             string value = fileLines[i].Substring(fileLines[i].IndexOf(generalFieldStart) + 1); 
             SetValues(varName, value);
@@ -61,9 +67,10 @@ public class Load : MonoBehaviour
         DebugUIManager.drawer.RefreshUI();
     }
 
-    private void SetValues(string varName, string value){
-        if (fields.Count == 0) fields = mainSerializedObject.GetType().GetFields().ToList();
-        int fieldIndex = fields.FindIndex(info => info.Name.Equals(varName));
+    private void SetValues(string varName, string value)
+    {
+        if (fields.Count == 0) fields = DebugUIManager.mainObjectFields;
+        int fieldIndex = fields.FindIndex(info => info.Name.Contains(varName));
         if (fieldIndex == -1) return;
 
         FieldInfo varInfo = fields[fieldIndex];
@@ -72,24 +79,33 @@ public class Load : MonoBehaviour
         //Key: subFieldName
         //Value: subFieldValue
         Dictionary<string, string> subFieldsValues = new Dictionary<string, string>();
-        
+
         //subFieldDelimiter characters are used as separators between subfields belonging to complex types.
         //so the presence of even one of these chars is an indicator of the current field being of a complex type
         int subFields = value.Count(ch => ch.Equals(subFieldDelimiter));
-        if (subFields > 0){
+        if (subFields > 0)
+        {
 
             subFieldsValues = HandleComplexField(value);
-            foreach (var item in subFieldsValues){                
+            foreach (var item in subFieldsValues)
+            {
                 DebugUIManager.changer.UpdateValue<string>($"{varInfo.Name}.{item.Key}", item.Value);
             }
-        }else{ //if no subFieldDelimiter character is found then we're handling a simple type
+        }
+        else
+        { //if no subFieldDelimiter character is found then we're handling a simple type
             value = value.Remove(value.LastIndexOf(lineEnd), 1);
-//            print("varName: " + varInfo.Name);
+            //            print("varName: " + varInfo.Name);
             DebugUIManager.changer.UpdateValue<string>(varInfo.Name, value);
         }
 
     }
 
+    /// <summary>
+    /// Splits the string version of a complex field in its core parts: names and values
+    /// </summary>
+    /// <param name="value">The complex field containing both names and values of the subfields</param>
+    /// <returns>A dictionary as key the names of the subfields and as value th evalue of each subfield</returns>
     private Dictionary<string, string> HandleComplexField(string value){
         int subFields = value.Count(ch => ch.Equals(subFieldDelimiter));
         int nextFieldStart = 0;
