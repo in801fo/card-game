@@ -10,7 +10,7 @@ public class DebugUIManager : MonoBehaviour
 {
     [SerializeField] private DrawDebugUI _drawer;
     [SerializeField] private UpdateDebugUI _changer;
-    [SerializeField] private RuntimeError _runtimeErrorDisplay;
+    [SerializeField] private RuntimeMsg _runtimeErrorDisplay;
 
     public static object serializingObject { get; private set; }
     public static List<FieldInfo> mainObjectFields = new List<FieldInfo>();
@@ -27,7 +27,7 @@ public class DebugUIManager : MonoBehaviour
     private void Awake(){
         drawer = Instantiate(_drawer.gameObject).GetComponent<DrawDebugUI>();
         changer = Instantiate(_changer.gameObject).GetComponent<UpdateDebugUI>();
-        Instantiate(_runtimeErrorDisplay.gameObject).GetComponent<RuntimeError>();
+        Instantiate(_runtimeErrorDisplay.gameObject).GetComponent<RuntimeMsg>();
         if (!EventSystem.current) CreateEventSystem();
     }
 

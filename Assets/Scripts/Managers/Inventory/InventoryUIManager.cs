@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using Unity.Collections;
+using UnityEditor.ShaderGraph.Internal;
 using UnityEngine;
 
 public class InventoryUIManager : CoordinatedMonoBehaviour
@@ -8,14 +10,14 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
 
     [Range(1, 10)]
     [SerializeField] private float spacingCards = 1.5f;
-    [Range(0, 1)]
-    [SerializeField] private float borderDistance;
     [SerializeField] private float defaultCameraDistance = 15f;
     [SerializeField] private AnimationCurve cardReshuffleCurve;
     [SerializeField] private float cardReshuffleSpeed = 2.5f;
     [SerializeField] private float yCurveMultiplier;
     [SerializeField] private float cardZDistance;
-    [field: SerializeField] public int displayableCards { get; private set; } = 0;
+    
+    public int displayableCards { get; private set; } = 0;
+    
     private List<Card> cards;
     private MeshRenderer referenceCardRenderer;
 
@@ -26,6 +28,7 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
     private Coroutine[] cardsCoroutines;
 
     private Card currentCardHolded;
+    private int movedCoroutineIndex;
 
     /// <summary>
     /// Amount of world units occupied by the width of one card
@@ -38,7 +41,10 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
     {
         base.Awake();
         defaultCameraDistance += Camera.main.nearClipPlane + cardZDistance;
+        CardInteractionManager.OnCardUse += HandleCardUse;
     }
+
+    
 
     protected override void Beginning()
     {
@@ -63,14 +69,18 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
         int i = 0;
         for (; i < cards.Count; i++)
         {
-            if (cardHolding.card.Equals(cards[i].card) || cardHolding.transform.position.x > cards[i].transform.position.x)
+            if (cardHolding.cardData.Equals(cards[i].cardData) || cardHolding.transform.position.x > cards[i].transform.position.x)
                 continue;
             else break;
-
         }
 
-        InventoryManager.Instance.AddCardAt(cardHolding.card, i, false);
+        InventoryManager.Instance.AddCardAt(cardHolding.cardData, i, false);
         this.cards.Insert(i, cardHolding);
+        //------------Move null coroutine to released position---------------
+        Coroutine coroutineToMove = cardsCoroutines[i];
+        cardsCoroutines[movedCoroutineIndex] = coroutineToMove;
+        cardsCoroutines[i] = null;
+                
         HandleAnimateCards();
         currentCardHolded = null;
     }
@@ -78,10 +88,14 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
     private void HandleCardHold(Card card)
     {
         //stop the animating of the holded card
-        int coroutineIndex = cards.FindIndex((Card c) => c.card.Equals(card.card));
-        if(coroutineIndex != -1 && cardsCoroutines[coroutineIndex] != null) //if that happens it means that an animation hasn't happened yet...
+        int coroutineIndex = cards.FindIndex((Card c) => c.cardData.Equals(card.cardData));
+        if (coroutineIndex != -1 && cardsCoroutines[coroutineIndex] != null) //if that happens it means that an animation hasn't happened yet...
+        {
             StopCoroutine(cardsCoroutines[coroutineIndex]);
+            cardsCoroutines[coroutineIndex] = null;
+        }
 
+        
         InventoryManager.Instance.RemoveCard(card);
         this.cards.Remove(card);
         currentCardHolded = card;
@@ -96,7 +110,7 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
         int handDeckCount = InventoryManager.Instance.GetHandDeckCount();
         if (handDeckCount > displayableCards)
             InventoryManager.Instance.RemoveCard(InventoryManager.Instance.GetHandDeck()[handDeckCount-1]);
-        //InventoryManager.Instance.MoveCardsToSideDeck(displayableCards - 1, handDeckCount - displayableCards);
+
         else
         {
             this.cards = CardGenerationManager.Instance.GenerateCards(displayableCards);
@@ -111,9 +125,11 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
 
     private void HandleAnimateCards()
     {
-        for(int i = 0; i < cards.Count; i++)
+        for (int i = 0; i < cards.Count; i++)
         {
+            //test to see if any coroutine's not null
             if (cardsCoroutines[i] != null)
+                //if the current one's not then stop it
                 StopCoroutine(cardsCoroutines[i]);
 
             cardReshuffleAnimationParams parameters = new cardReshuffleAnimationParams()
@@ -122,11 +138,41 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
                 duration = cardReshuffleSpeed,
                 curve = cardReshuffleCurve
             };
-            
+
             cardsCoroutines[i] = StartCoroutine(cards[i].AnimateCard(parameters));
         }
     }
 
+    
+    private void HandleCardUse(Card card)
+    {
+        if (!card) return;
+        Card removeCardObject = cards.Find((Card c) => c.cardData.Equals(card.cardData));
+        //if for some reason you didn't find the card, exit
+        if (!removeCardObject)
+        {
+            RuntimeMsg.Error($"Unable to find {card} card.",
+                $"The specified card: {card} was not found in the InventoryUIManager card collection!");
+            return;
+        }
+
+        //need to move all the valid coroutines for the reshuffle animations
+        //otherwise, once the chosen card has been removed from the hand deck
+        //some of the will lag behind before starting the reshuffle animation... 
+        int indexOfCard = cards.IndexOf(card);
+        if(indexOfCard < cards.Count-1)
+        {
+            for (int i = indexOfCard; i < cards.Count - 1; i++)
+                cardsCoroutines[i] = cardsCoroutines[i + 1];  
+        }
+        
+        cards.Remove(removeCardObject);
+        Array.Resize(ref cardsCoroutines, cards.Count);
+        Destroy(removeCardObject.gameObject);
+
+        HandleAnimateCards();
+
+    }
 
     protected override void ReadyUpdate()
     {
@@ -148,7 +194,12 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
             currentCardHolded.transform.parent.position = cardPos;
         }
     }
-
+    
+    /// <summary>
+    /// Updates the space occupied by a card based on the values:
+    /// spacingCards: the amount of space relative to the size of a card
+    /// cardsWorldWidth: the width of a card in world's units
+    /// </summary>
     private void UpdateCardSpace()
     {
         spaceOccupiedByCard = cardsWorldWidth + (cardsWorldWidth * (spacingCards - 1));

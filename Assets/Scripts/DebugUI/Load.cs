@@ -34,19 +34,19 @@ public class Load : MonoBehaviour
 
     public void LoadFile(){
         if (!Directory.Exists(folderPath)){
-            RuntimeError.Error(new DirectoryNotFoundException($"Directory {folderPath} not found, you either didn't save before loading (moron), or you simply deleted it (still a moron)"));
+            RuntimeMsg.Error(new DirectoryNotFoundException($"Directory {folderPath} not found, you either didn't save before loading (moron), or you simply deleted it (still a moron)"));
             return;
         }
 
         if (!File.Exists(loadPath)){
-            RuntimeError.Error(new FileNotFoundException($"File {loadPath} not found, you either didn't save before loading (moron), or you simply deleted it (still a moron)"));
+            RuntimeMsg.Error(new FileNotFoundException($"File {loadPath} not found, you either didn't save before loading (moron), or you simply deleted it (still a moron)"));
             return;
         }
 
         string[] fileLines = File.ReadAllLines(loadPath);
 
         if (fileLines.Length == 0){
-            RuntimeError.Warning($"Tried to load {loadPath}, but the file was empty.");
+            RuntimeMsg.Warning($"Tried to load {loadPath}, but the file was empty.");
             return;
         }
 
@@ -56,7 +56,7 @@ public class Load : MonoBehaviour
             //            print("line:" + fileLines[i]);
             int fieldStarterPos = fileLines[i].IndexOf(generalFieldStart);
             if (fieldStarterPos == -1){
-                RuntimeError.Warning("Unable to parse value", $"Unable to parse value {fileLines[i]}, skipping...");
+                RuntimeMsg.Warning("Unable to parse value", $"Unable to parse value {fileLines[i]}, skipping...");
                 continue;
             }
             string varName = fileLines[i].Substring(0, fileLines[i].IndexOf(generalFieldStart));

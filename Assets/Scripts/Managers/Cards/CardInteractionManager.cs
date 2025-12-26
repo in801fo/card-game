@@ -5,9 +5,15 @@ public class CardInteractionManager : MonoBehaviour
 {
     private RaycastHit hit = new RaycastHit();
     [SerializeField] private LayerMask cardsLayer;
+    [Range(0, 1)]
+    [Tooltip("The amount of time required for a card to be grabbed and moved around by the player")]
+    [SerializeField] private float minTimeHold; 
     public static Action<Card> OnCardCursorHover;
     public static Action<Card> OnCardUse;
     public static Action<Card> OnCardRelease;
+    /// <summary>
+    /// Only triggered on the first frame in which a card has started being holded
+    /// </summary>
     public static Action<Card> OnCardHold;
     private Card currentCardHover = null;
     private Card currentSelected;
@@ -17,69 +23,85 @@ public class CardInteractionManager : MonoBehaviour
     /// </summary>
     private bool wasHolding;
 
-    /// <summary>
-    /// <para><i>Has the player pressed on the card to use it in the game?</i></para>
-    /// Need this to decide if the player has pressed the card with the intention of using it or if to just change its position in the hand deck
-    /// </summary>
-    private bool hasPressedDown;
+    private float timePressedMouse0Down;
 
+    /// <summary>
+    /// Need this to prevent a loop with the hover animation
+    /// </summary>
+    private float hoverCoolDown;
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Mouse0))
+        //for when releasing
+        if (Input.GetKeyUp(KeyCode.Mouse0))
         {
-            if (RaycastForCard() && currentCardHover != currentSelected)
-            {
-                currentSelected = currentCardHover;
-                hasPressedDown = true;
-                //RuntimeError.Info("New Card!", "Selected New Card: " + currentSelected.card.Name);
-            }
+
+            if (!wasHolding)
+                UseCurrentlySelectedCard();
+            else
+                HandleCardRelease();
+
+
+            timePressedMouse0Down = 0;
+
+            currentSelected = null;
+            wasHolding = false;
         }
 
 
         if (Input.GetKey(KeyCode.Mouse0))
         {
-            if (RaycastForCard())
+            //TODO: clean this shit
+            if (!wasHolding)
             {
-                if (!wasHolding) OnCardHold?.Invoke(currentSelected);
-                wasHolding = true;
-            }
-        }
-
-        //for when releasing
-        if (Input.GetKeyUp(KeyCode.Mouse0))
-        {
-            if (hasPressedDown)
-            {
-                if (!wasHolding)
-                    UseCurrentlySelectedCard();
+                if (RaycastForCard())
+                {
+                    currentSelected = currentCardHover;
+                    timePressedMouse0Down += Time.deltaTime;
+                }
                 else
-                    HandleCardRelease();
+                {
+                    currentSelected = null;
+                    timePressedMouse0Down = 0;
+                }
+
+                //if holding the card
+                if (timePressedMouse0Down > minTimeHold)
+                {
+                    OnCardHold?.Invoke(currentSelected);
+                    wasHolding = true;
+                }
+                else wasHolding = false;
             }
-
-            currentSelected = null;
-            hasPressedDown = false;
-            wasHolding = false;
         }
-
 
 
         if (Input.GetKeyDown(KeyCode.Mouse1))
         {
             if (RaycastForCard() && currentCardHover != currentSelected)
             {
-                RuntimeError.Info("Get info for card: " + currentCardHover);
-                InventoryUIManager.GetCardInfoScreen(currentCardHover.card);
+                RuntimeMsg.Info("Get info for card: " + currentCardHover);
+                InventoryUIManager.GetCardInfoScreen(currentCardHover.cardData);
             }
         }
     }
 
     private void FixedUpdate()
     {
+        if (hoverCoolDown > 0)
+            hoverCoolDown -= Time.deltaTime;
+        if (hoverCoolDown < 0) hoverCoolDown = 0;
+
         if (!wasHolding)
         {
-            RaycastForCard();
-            OnCardCursorHover?.Invoke(currentCardHover);
+            //1) save the previous value of currentCardHover
+            Card beforeCardHover = currentCardHover;
+            //2) update currentCardHover only if cool down is zero
+            if (hoverCoolDown == 0) RaycastForCard();
+
+            if (currentCardHover == null && beforeCardHover != null) hoverCoolDown = 0.3f; 
+            
+            if (beforeCardHover != currentCardHover) OnCardCursorHover?.Invoke(currentCardHover);
         }
     }
 
@@ -97,7 +119,7 @@ public class CardInteractionManager : MonoBehaviour
             Card card;
             if (!hit.rigidbody.gameObject.TryGetComponent<Card>(out card))
             {
-                RuntimeError.Warning(hit.rigidbody.name + " is on the Cards Layer!");
+                RuntimeMsg.Warning(hit.rigidbody.name + " is on the Cards Layer!");
                 return false;
             }
 
@@ -114,6 +136,8 @@ public class CardInteractionManager : MonoBehaviour
 
     private void UseCurrentlySelectedCard()
     {
+        if (!currentSelected) return;
+        RuntimeMsg.Info("Used Card!", $"Used Card {currentSelected.cardData.ToString()}");
         OnCardUse?.Invoke(currentSelected);
     }
 

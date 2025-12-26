@@ -75,7 +75,7 @@ public class CardGenerationManager : MonoBehaviour
         for (int i = 0; i < generationAmount; i++)
         {
             if (playerCards.FindIndex(
-                    (Card card) => card.card.Equals(cards[i])
+                    (Card card) => card.cardData.Equals(cards[i])
                 ) != -1)
                 continue;
             

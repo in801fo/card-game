@@ -17,9 +17,9 @@ enum errorType
     INFO
 }
 
-public class RuntimeError : MonoBehaviour
+public class RuntimeMsg : MonoBehaviour
 {
-    public static RuntimeError Instance { get; private set; }
+    public static RuntimeMsg Instance { get; private set; }
 
     private GameObject errorConsole;
     private GameObject errorConsoleContent;

@@ -17,7 +17,7 @@ public class Card : MonoBehaviour
 
     private Animator animator;
 
-    public CardScriptable card { get; private set; }
+    public CardScriptable cardData { get; private set; }
 
     private List<Vector2> defaultUVs = new List<Vector2>()
     {
@@ -35,22 +35,7 @@ public class Card : MonoBehaviour
     {
         animator = GetComponent<Animator>();
         if (!isInfoCard)
-        {
-            CardInteractionManager.OnCardCursorHover +=
-                (Card card) =>
-                    {
-                        if (card != null && card == this)
-                        {
-                            animator.SetBool("up", true);
-                            animator.SetBool("down", false);
-                        }
-                        else
-                        {
-                            animator.SetBool("up", false);
-                            animator.SetBool("down", true);
-                        }
-                    };
-        }
+            CardInteractionManager.OnCardCursorHover += HandleState;
     }
 
     public void SetUpGameCard(float cardFrontOffset, CardScriptable card)
@@ -60,8 +45,24 @@ public class Card : MonoBehaviour
         MeshFilter meshFilter = this.gameObject.GetComponent<MeshFilter>();
 
         SetCardUVs(meshFilter.mesh, cardFrontOffset);
+
+        this.cardData = card;
+    }
+    
+    private void HandleState(Card card)
+    {
         
-        this.card = card;
+        if (card != null && card == this)
+        {
+            animator.SetBool("up", true);
+            animator.SetBool("down", false);
+        }
+        else
+        {
+            animator.SetBool("up", false);
+            animator.SetBool("down", true);
+        }
+        
     }
 
     private void SetCardUVs(Mesh mesh, float cardFrontOffset)
@@ -84,7 +85,8 @@ public class Card : MonoBehaviour
     
     private void FixedUpdate()
     {
-        if(!isInfoCard) this.transform.parent.rotation = Quaternion.LookRotation(this.transform.parent.position - Camera.main.transform.position) * Quaternion.Euler(Vector3.forward * 90);
+        if(!isInfoCard) 
+            this.transform.parent.rotation = Quaternion.LookRotation(this.transform.parent.position - Camera.main.transform.position) * Quaternion.Euler(Vector3.forward * 90);
     }
 
     public void SetUpInfoCard(CardScriptable card)
@@ -105,7 +107,7 @@ public class Card : MonoBehaviour
         }
         catch (InvalidCastException) { return false; }
 
-        return this.card == card.card;
+        return this.cardData == card.cardData;
     }
 
     public override int GetHashCode()
@@ -113,11 +115,19 @@ public class Card : MonoBehaviour
         return base.GetHashCode();
     }
 
+    public override string ToString()
+    {
+        return $"Card {cardData.Name}. Description {cardData.Description}";
+    }
+
     public IEnumerator AnimateCard(cardReshuffleAnimationParams parameters)
     {
+        //Also checking all over the place if the current instance is null (only happens when the object is destroyed)
+        if (this == null) yield break;
+        
         float elapsedTime = 0;
 
-        while (elapsedTime < parameters.duration)
+        while (elapsedTime < parameters.duration && this != null)
         {
             float curveValue = parameters.curve.Evaluate(elapsedTime / parameters.duration);
 
@@ -127,6 +137,14 @@ public class Card : MonoBehaviour
             yield return null;
         }
 
+        if (this == null) yield break;
+
         transform.parent.position = parameters.targetPosition;
+    }
+
+    private void OnDestroy()
+    {
+        StopAllCoroutines();
+        CardInteractionManager.OnCardCursorHover -= HandleState;
     }
 }

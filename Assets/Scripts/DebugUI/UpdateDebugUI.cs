@@ -167,7 +167,7 @@ public class UpdateDebugUI : MonoBehaviour{
             var converter = TypeDescriptor.GetConverter(valueType);
             return converter.ConvertFrom(value);
         }catch(Exception e){
-            RuntimeError.Error(e, $"While attempting conversion of value {value} to type {valueType} an error occured. This error is not fatal.");
+            RuntimeMsg.Error(e, $"While attempting conversion of value {value} to type {valueType} an error occured. This error is not fatal.");
         }
 
         return null;
@@ -193,13 +193,13 @@ public class UpdateDebugUI : MonoBehaviour{
 
     private float HandleFloat(string value){
         if (float.TryParse(value, out float res)) return res;
-        else RuntimeError.Error(new ParsingException("Unable to parse value, wtf did you write in there?!", value, typeof(float)));
+        else RuntimeMsg.Error(new ParsingException("Unable to parse value, wtf did you write in there?!", value, typeof(float)));
         return new float();
     }
     private int HandleInt(string value){
         string numericalString = new string((from c in value where char.IsNumber(c) || c.Equals('-') select c).ToArray());
         if (int.TryParse(numericalString, out int res)) return res;
-        else RuntimeError.Error(new ParsingException("Unable to parse value, wtf did you write in there?!", value, typeof(int)));
+        else RuntimeMsg.Error(new ParsingException("Unable to parse value, wtf did you write in there?!", value, typeof(int)));
         return new int();
     }
     private bool HandleBool(string value){
@@ -207,7 +207,7 @@ public class UpdateDebugUI : MonoBehaviour{
         if (sanitizedInput.ToLower().Equals(true.ToString().ToLower())) return true;
         
         if (sanitizedInput.ToLower().Equals(false.ToString().ToLower())) return false;
-        else RuntimeError.Error(new ParsingException("Unable to parse value, wtf did you write in there?!", value, typeof(bool)));
+        else RuntimeMsg.Error(new ParsingException("Unable to parse value, wtf did you write in there?!", value, typeof(bool)));
         return new bool();
     }
     private string HandleString(string value){

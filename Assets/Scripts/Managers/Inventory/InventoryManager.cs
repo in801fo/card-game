@@ -69,7 +69,7 @@ public class InventoryManager : CoordinatedMonoBehaviour
 
     public void RemoveCard(Card card, bool removeFromHandDeck = true)
     {
-        RemoveCard(card.card, removeFromHandDeck);
+        RemoveCard(card.cardData, removeFromHandDeck);
     }
 
     /// <summary>

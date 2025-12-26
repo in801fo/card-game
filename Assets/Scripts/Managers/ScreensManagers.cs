@@ -25,7 +25,7 @@ public class GameScreensManager : MonoBehaviour
         );
 
         GameObject screenCloseButton = GameObject.FindWithTag("closeButton");
-        if (!screenCloseButton) RuntimeError.Warning("Current Screen doesn't have a close button");  
+        if (!screenCloseButton) RuntimeMsg.Warning("Current Screen doesn't have a close button");  
 
         return currentScreen.Value;
 
