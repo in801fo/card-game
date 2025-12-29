@@ -14,6 +14,4 @@ public class CardScriptable : ScriptableObject
     [field: SerializeField] public CardEffectEnum[] cardEffects { get; private set; }
     [field: SerializeField][Range(1, 10)] public int maxCardUsages { get; private set; }
 
-
-
 }

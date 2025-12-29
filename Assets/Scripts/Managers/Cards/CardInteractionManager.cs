@@ -129,7 +129,7 @@ public class CardInteractionManager : MonoBehaviour
                 currentCardHover = card; 
 
         }
-        else currentCardHover = null;//otherwhise set it to null
+        else currentCardHover = null; //otherwise set it to null
 
         return res;
     }
@@ -139,6 +139,8 @@ public class CardInteractionManager : MonoBehaviour
         if (!currentSelected) return;
         RuntimeMsg.Info("Used Card!", $"Used Card {currentSelected.cardData.ToString()}");
         OnCardUse?.Invoke(currentSelected);
+        //code to use the card
+        //...
     }
 
 }
