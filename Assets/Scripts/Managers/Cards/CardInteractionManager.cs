@@ -31,7 +31,6 @@ public class CardInteractionManager : MonoBehaviour
     /// </summary>
     private float hoverCoolDown;
 
-    private const string effectsLabel = "effectsList";
 
     private void Update()
     {
@@ -140,29 +139,13 @@ public class CardInteractionManager : MonoBehaviour
     private void GetCardInfoScreen(Card card)
     {
         GameObject screen = GameScreensManager.Instance.SpawnScreen("cardInfo");
-        screen.GetComponentInChildren<CardGraphics>().SetUpInfoCard(card);
+        ScreenInitializer<Card> screenInitializer = screen.GetComponent<ScreenInitializer<Card>>();
+        if(screenInitializer != null)
+            screenInitializer.Initialize(card);
         
         //TODO: WEIRD PROBLEM WITH DESTROYING AND ADDING BACK ITEMS INTO A SCROLL VIEW, FOR NOW JUST POOL ALL EFFECTS AND DISABLE ALL NON RELEVANT ONES
 
-        //this only when the card doesn't have any effects
-        //GameObject effectsScrollViewContentObject = GameObject.FindWithTag(effectsLabel);
-
-        //removing previous children if had any
-        /*for (int i = 0; i < effectsScrollViewContentObject.transform.childCount; i++)
-        {
-            effectsScrollViewContentObject.transform.GetChild(i).gameObject.SetActive(false);
-            //Destroy(effectsScrollViewContentObject.transform.GetChild(i).gameObject);
-        }*/
-
-
-        //if (card.cardData.cardEffects == null || card.cardData.cardEffects.Length == 0) return;
-
-        //GameObject[] effects = CardGenerationManager.Instance.CreateEffectsEntries(card.cardData.cardEffects);
-
-        /*for (int i = 0; i < effects.Length; i++)
-        {
-            effects[i].transform.SetParent(effectsScrollViewContentObject.transform);
-        }*/
+        
 
     }
 

@@ -394,7 +394,7 @@ GameObject:
   - component: {fileID: 8977319514385893456}
   - component: {fileID: 752833623039440430}
   m_Layer: 5
-  m_Name: Button
+  m_Name: CloseButton
   m_TagString: closeButton
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1133,6 +1133,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7845118966889476494}
+  - component: {fileID: 2600024806032591391}
   m_Layer: 0
   m_Name: card_info_gamescreen
   m_TagString: Untagged
@@ -1156,6 +1157,20 @@ Transform:
   - {fileID: 146053902474520712}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2600024806032591391
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3077631709161952676}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ade1e12f3a6331e42a73e25989a11475, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CardInfoScreenInitializer
+  <closeButton>k__BackingField: {fileID: 752833623039440430}
+  effectEntryPrefab: {fileID: 1725384886874677221, guid: cc507cddbcd61404787e53beb05abdab, type: 3}
 --- !u!1 &3098945872184066372
 GameObject:
   m_ObjectHideFlags: 0
