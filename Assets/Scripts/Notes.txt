@@ -5,3 +5,12 @@ of making the player aknoledge the card's effects description and other attribut
 
 On top of every card selected in the hand a player can press the "i" button to display a menù with a fully
 rendered card, with all the information.
+
+
+
+
+
+---03/01/2026---
+Diviso in due la classe che rappresenta le carte.
+Una che gestisce la grafica della carta (CardGraphics)
+E un altra che si occupa di rappresentare la carta in sè, con tutti i suoi metodi etc...

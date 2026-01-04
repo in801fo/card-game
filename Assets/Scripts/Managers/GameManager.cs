@@ -35,9 +35,12 @@ public class GameManager : MonoBehaviour
         managers.Add(inventoryUiManager.gameObject);
         managers.Add(Instantiate(cardInteractionManager.gameObject));
         managers.Add(Instantiate(cardGenerationManager.gameObject));
+
+        //here getting the setting the parent to the managersHolder
         for (int i = 0; i < managers.Count; i++)
         {
             Component[] list = managers[i].GetComponents<Component>();
+            //here checking if the current manager is subclass of CoordinatedMonoBehaviour, if so incrementing actualInheriting
             if (list[1].GetType().IsSubclassOf(typeof(CoordinatedMonoBehaviour))) actualInheriting++;
             managers[i].transform.SetParent(managersHolder.transform);
         }
@@ -59,6 +62,6 @@ public class GameManager : MonoBehaviour
         if (count == actualInheriting) OnDoneGenerating?.Invoke();
     }
 
-    public static void ValidateInitialization(){ count++; }
+    public static void ValidateInitialization() => count++;
     
 }

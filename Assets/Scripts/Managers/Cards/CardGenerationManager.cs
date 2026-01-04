@@ -23,21 +23,29 @@ public class CardGenerationManager : MonoBehaviour
 
     public static CardGenerationManager Instance;
 
-    private Card refCard;
+    private GameObject refCard;
 
     private void Awake()
     {
         if (!Instance) Instance = this;
         else Destroy(this);
+        //need to handle card use as to be able to correctly update the cache of current cards
+        CardInteractionManager.OnCardUse += HandleCardUse;
     }
 
-    public void SetUpGameCard(CardScriptable cardScriptable, Card card)
+    private void HandleCardUse(Card card)
+    {
+        playerCards.Remove(card);
+    }
+
+    public void SetUpGameCard(CardScriptable cardScriptable, CardGraphics cardGraphics, Card card)
     {
         
         if (cardScriptable == null || card == null)
             return;
 
-        card.SetUpGameCard(GetCardFrontIndex(cardScriptable.type), cardScriptable);
+        card.InitializeCard(cardScriptable);
+        cardGraphics.SetUpGameCard(GetCardFrontIndex(card.cardData.type), card);
     }
 
     public float GetCardFrontIndex(CardTypeEnum type)
@@ -45,7 +53,7 @@ public class CardGenerationManager : MonoBehaviour
         return (float)cardsHeight * ((int)type) / cardBackAtlas.height;
     }
 
-    public GameObject[] CreateEffectsEntries(CardEffectEnum[] effects)
+    public GameObject[] CreateEffectsEntries(effectsEnum[] effects)
     {
         GameObject[] res = new GameObject[effects.Length];
         for (int i = 0; i < effects.Length; i++)
@@ -69,38 +77,69 @@ public class CardGenerationManager : MonoBehaviour
     {
         List<CardScriptable> cards = cardScriptables == null ?
             InventoryManager.Instance.GetHandDeck() : cardScriptables;
-
+        
         int generationAmount = displayable >= 0 && displayable <= cards.Count ? displayable : cards.Count;
 
         for (int i = 0; i < generationAmount; i++)
         {
+            //if you find another card in cached playerCards with identical info to the current (cards[i]) 
+            //then skip creation for current card 
             if (playerCards.FindIndex(
                     (Card card) => card.cardData.Equals(cards[i])
                 ) != -1)
                 continue;
+
+            GameObject cardParentGO = Instantiate(cardPrefab, Vector3.zero, Quaternion.Euler(new Vector3(0, 0, 90)));
             
-            playerCards.Add(Instantiate(cardPrefab, Vector3.zero, Quaternion.Euler(new Vector3(0, 0, 90))).GetComponentInChildren<Card>());
-            SetUpGameCard(cards[i], playerCards[i]);
+            GameObject actualCard = cardParentGO.transform.GetChild(0).gameObject;
+
+            AttachCorrectCardTypeScript(actualCard, cards[i].type);
+            playerCards.Add(cardParentGO.GetComponentInChildren<Card>());
+            SetUpGameCard(cards[i], cardParentGO.GetComponentInChildren<CardGraphics>(), playerCards[i]);
         }
         OnGenerationDone?.Invoke(playerCards);
         return playerCards;
+    }
+    
+    private void AttachCorrectCardTypeScript(GameObject cardGO, CardTypeEnum type)
+    {
+        switch (type)
+        {
+            case CardTypeEnum.CHARACTER:
+                cardGO.AddComponent<CharacterCard>();
+            break;
+            case CardTypeEnum.TRAP:
+                cardGO.AddComponent<TrapCard>();
+            break;
+            case CardTypeEnum.ICARD:
+                cardGO.AddComponent<ICard>();
+                break;
+            default:
+                cardGO.AddComponent<ActionCard>();
+            break;
+        
+        }
     }
 
     /// <summary>
     /// Generates a card which is used as reference for rendering all the others
     /// </summary>
     /// <returns>The reference card</returns>
-    public Card GenerateRefCard()
+    public GameObject GenerateRefCard()
     {
         if (refCard != null) return refCard;
-        
-        refCard = Instantiate(cardPrefab, Vector3.zero, Quaternion.Euler(new Vector3(0, 0, 90)))
-                            .GetComponentInChildren<Card>();
 
-        SetUpGameCard(InventoryManager.Instance.GetHandDeck()[0],
-                    refCard);
-        
+        refCard = Instantiate(cardPrefab, Vector3.zero, Quaternion.Euler(new Vector3(0, 0, 90)));
+        AttachCorrectCardTypeScript(refCard, CardTypeEnum.ACTION);
+
+        /*SetUpGameCard(InventoryManager.Instance.GetHandDeck()[0],
+                    refCard);*/
+
         return refCard;
     }
 
+    private void OnDestroy()
+    {
+        CardInteractionManager.OnCardUse -= HandleCardUse;
+    }
 }
