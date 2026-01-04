@@ -17,25 +17,34 @@ public class CardGenerationManager : MonoBehaviour
 
     [SerializeField] private GameObject cardPrefab;
 
-    private List<Card> playerCards = new List<Card>();
-
     public static Action<List<Card>> OnGenerationDone;
 
     public static CardGenerationManager Instance;
 
     private GameObject refCard;
 
+    private List<Card> playerCards = new List<Card>();
+
     private void Awake()
     {
         if (!Instance) Instance = this;
         else Destroy(this);
-        //need to handle card use as to be able to correctly update the cache of current cards
         CardInteractionManager.OnCardUse += HandleCardUse;
+        InventoryManager.OnCardMoved += HandleCardMoved;
     }
 
     private void HandleCardUse(Card card)
     {
         playerCards.Remove(card);
+    }
+
+    private void HandleCardMoved(CardScriptable card, int indexTo)
+    {
+        int cardMovedIndex = playerCards.FindIndex((Card c) => c.cardData.Equals(card));
+
+        Card cardToMove = playerCards[cardMovedIndex];
+        playerCards.RemoveAt(cardMovedIndex);
+        playerCards.Insert(indexTo, cardToMove);
     }
 
     public void SetUpGameCard(CardScriptable cardScriptable, CardGraphics cardGraphics, Card card)
@@ -77,12 +86,12 @@ public class CardGenerationManager : MonoBehaviour
     {
         List<CardScriptable> cards = cardScriptables == null ?
             InventoryManager.Instance.GetHandDeck() : cardScriptables;
-        
+
         int generationAmount = displayable >= 0 && displayable <= cards.Count ? displayable : cards.Count;
 
         for (int i = 0; i < generationAmount; i++)
         {
-            //if you find another card in cached playerCards with identical info to the current (cards[i]) 
+            //if you find another card present in the hand deck with identical info to the current (cards[i]) 
             //then skip creation for current card 
             if (playerCards.FindIndex(
                     (Card card) => card.cardData.Equals(cards[i])
@@ -136,10 +145,5 @@ public class CardGenerationManager : MonoBehaviour
                     refCard);*/
 
         return refCard;
-    }
-
-    private void OnDestroy()
-    {
-        CardInteractionManager.OnCardUse -= HandleCardUse;
     }
 }

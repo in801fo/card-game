@@ -27,7 +27,6 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
     private Coroutine[] cardsCoroutines;
 
     private CardGraphics currentCardHolded;
-    private int movedCoroutineIndex;
 
     /// <summary>
     /// Amount of world units occupied by the width of one card
@@ -38,7 +37,6 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
     {
         base.Awake();
         defaultCameraDistance += Camera.main.nearClipPlane + cardZDistance;
-        CardInteractionManager.OnCardUse += HandleCardUse;
     }
 
     
@@ -53,6 +51,7 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
         InventoryManager.OnCardAddedToHandDeck += HandleCardAdded;
         CardInteractionManager.OnCardHold += HandleCardHold;
         CardInteractionManager.OnCardRelease += HandleCardRelease;
+        CardInteractionManager.OnCardUse += HandleCardUse;
 
 
         HandleCardGeneration();
@@ -73,14 +72,10 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
             else break;
         }
 
-        InventoryManager.Instance.AddCardAt(cardHolding.cardData, i, false);
+        InventoryManager.Instance.AddCardAt(cardHolding.cardData, i, true);
         this.cards.Insert(i, cardGraphics);
         //------------Move null coroutine to released position---------------
-        Coroutine coroutineToMove = cardsCoroutines[i];
-        movedCoroutineIndex = i + 1;
-        cardsCoroutines[movedCoroutineIndex] = coroutineToMove;
-        cardsCoroutines[i] = null;
-                
+
         HandleAnimateCards();
         currentCardHolded = null;
     }
@@ -168,7 +163,7 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
         //some of them will lag behind before starting the reshuffle animation... 
         int indexOfCard = cards.IndexOf(cardGraphics);
 
-        //ofc only do it iF the card was at a position below the top one
+        //ofc only do it if the card was at a position below the top one
         if(indexOfCard < cards.Count-1)
         {
             //move the affected cards (the ones that where after the chosen one) back one cell
