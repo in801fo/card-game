@@ -9,6 +9,9 @@ public abstract class CoordinatedMonoBehaviour : MonoBehaviour
 {
     private bool Ready;
 
+    /// <summary>
+    /// When using Awake, please keep the base at the top of the overridden version otherwise nothing will start
+    /// </summary>
     protected virtual void Awake()
     {
         GameManager.OnDoneGenerating += HandleGenerationDone;

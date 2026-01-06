@@ -47,3 +47,4 @@ MonoBehaviour:
   cardsLayer:
     serializedVersion: 2
     m_Bits: 64
+  minTimeHold: 0.235

@@ -9,6 +9,7 @@ public class InventoryManager : CoordinatedMonoBehaviour
     private List<CardScriptable> sideDeck = new List<CardScriptable>();
 
     public static Action<CardScriptable> OnCardAddedToHandDeck;
+    public static Action<CardScriptable, int> OnCardMoved;
 
     public static InventoryManager Instance;
     public Action OnZeroCards;
@@ -34,7 +35,7 @@ public class InventoryManager : CoordinatedMonoBehaviour
     public void AddCardAt(CardScriptable card, int index, bool signal = true)
     {
         handDeck.Insert(index, card);
-        if(signal)OnCardAddedToHandDeck?.Invoke(card);
+        if(signal) OnCardMoved?.Invoke(card, index);
     }
 
     protected override void ReadyUpdate()
@@ -69,7 +70,7 @@ public class InventoryManager : CoordinatedMonoBehaviour
 
     public void RemoveCard(Card card, bool removeFromHandDeck = true)
     {
-        RemoveCard(card.card, removeFromHandDeck);
+        RemoveCard(card.cardData, removeFromHandDeck);
     }
 
     /// <summary>

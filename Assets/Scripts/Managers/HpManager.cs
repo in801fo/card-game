@@ -10,7 +10,7 @@ public class HpManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance) Instance = this;
+        if (Instance == null) Instance = this;
         else Destroy(this);
     }
 

@@ -83,7 +83,11 @@ public class Save : MonoBehaviour
     }
 
     private string FormatInfo(string fieldName, object propertyValue){
-        if (propertyValue.ToString().Contains('.')) propertyValue = propertyValue.ToString().Replace('.', ',');
+
+        if (propertyValue != null && propertyValue.ToString().Contains('.'))
+            propertyValue = propertyValue.ToString().Replace('.', ',');
+        if (propertyValue == null) propertyValue = "null";
+        
         return $"{fieldName}: {propertyValue}";
     }
 

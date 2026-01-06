@@ -1,21 +1,23 @@
 using System;
 using System.Collections.Generic;
+using Unity.Collections;
 using UnityEngine;
+using System.Linq;
 
 public class InventoryUIManager : CoordinatedMonoBehaviour
 {
 
     [Range(1, 10)]
     [SerializeField] private float spacingCards = 1.5f;
-    [Range(0, 1)]
-    [SerializeField] private float borderDistance;
     [SerializeField] private float defaultCameraDistance = 15f;
     [SerializeField] private AnimationCurve cardReshuffleCurve;
     [SerializeField] private float cardReshuffleSpeed = 2.5f;
     [SerializeField] private float yCurveMultiplier;
     [SerializeField] private float cardZDistance;
-    [field: SerializeField] public int displayableCards { get; private set; } = 0;
-    private List<Card> cards;
+    
+    public int displayableCards { get; private set; } = 0;
+    
+    private List<CardGraphics> cards;
     private MeshRenderer referenceCardRenderer;
 
     private float spaceOccupiedByCard;
@@ -24,20 +26,20 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
 
     private Coroutine[] cardsCoroutines;
 
-    private Card currentCardHolded;
+    private CardGraphics currentCardHolded;
 
     /// <summary>
     /// Amount of world units occupied by the width of one card
     /// </summary>
     private float cardsWorldWidth;
 
-    private const string effectsLabel = "effectsList";
-
     protected override void Awake()
     {
         base.Awake();
         defaultCameraDistance += Camera.main.nearClipPlane + cardZDistance;
     }
+
+    
 
     protected override void Beginning()
     {
@@ -49,6 +51,7 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
         InventoryManager.OnCardAddedToHandDeck += HandleCardAdded;
         CardInteractionManager.OnCardHold += HandleCardHold;
         CardInteractionManager.OnCardRelease += HandleCardRelease;
+        CardInteractionManager.OnCardUse += HandleCardUse;
 
 
         HandleCardGeneration();
@@ -57,48 +60,59 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
     private void HandleCardRelease(Card cardHolding)
     {
 
+        CardGraphics cardGraphics = cardHolding.gameObject.GetComponent<CardGraphics>();
+
         //code to determine the position in the hand deck based on the position
         //at which the player released the button
         int i = 0;
         for (; i < cards.Count; i++)
         {
-            if (cardHolding.card.Equals(cards[i].card) || cardHolding.transform.position.x > cards[i].transform.position.x)
+            if (cardHolding.cardData.Equals(cards[i].card.cardData) || cardHolding.transform.position.x > cards[i].transform.position.x)
                 continue;
             else break;
-
         }
 
-        InventoryManager.Instance.AddCardAt(cardHolding.card, i, false);
-        this.cards.Insert(i, cardHolding);
+        InventoryManager.Instance.AddCardAt(cardHolding.cardData, i, true);
+        this.cards.Insert(i, cardGraphics);
+        //------------Move null coroutine to released position---------------
+
         HandleAnimateCards();
         currentCardHolded = null;
     }
 
-    private void HandleCardHold(Card card)
+    private void HandleCardHold(Card cardData)
     {
-        //stop the animating of the holded card
-        int coroutineIndex = cards.FindIndex((Card c) => c.card.Equals(card.card));
-        if(coroutineIndex != -1 && cardsCoroutines[coroutineIndex] != null) //if that happens it means that an animation hasn't happened yet...
-            StopCoroutine(cardsCoroutines[coroutineIndex]);
 
-        InventoryManager.Instance.RemoveCard(card);
-        this.cards.Remove(card);
-        currentCardHolded = card;
+        CardGraphics cardGraphics = cardData.gameObject.GetComponent<CardGraphics>();
+        //stop the animating of the holded card
+        int coroutineIndex = cards.FindIndex((CardGraphics c) => c.card.Equals(cardGraphics.card));
+        if (coroutineIndex != -1 && cardsCoroutines[coroutineIndex] != null) //if that happens it means that an animation hasn't happened yet...
+        {
+            StopCoroutine(cardsCoroutines[coroutineIndex]);
+            cardsCoroutines[coroutineIndex] = null;
+        }
+
+        //temporarily remove the card from the inventory 
+        InventoryManager.Instance.RemoveCard(cardGraphics.card);
+        this.cards.Remove(cardGraphics);
+        currentCardHolded = cardGraphics;
     }
 
     private void HandleCardAdded(CardScriptable scriptable)
     {
         //first check if we aren't exceeding on the number of spawnable cards
         //if we are, move them in the side deck.
-        //otherwhise generate the gameobject for the card
+        //otherwise generate the gameobject for the card
         
         int handDeckCount = InventoryManager.Instance.GetHandDeckCount();
         if (handDeckCount > displayableCards)
+            //remove the card which was added to the internal InventoryManager's card list
             InventoryManager.Instance.RemoveCard(InventoryManager.Instance.GetHandDeck()[handDeckCount-1]);
-        //InventoryManager.Instance.MoveCardsToSideDeck(displayableCards - 1, handDeckCount - displayableCards);
         else
         {
-            this.cards = CardGenerationManager.Instance.GenerateCards(displayableCards);
+            List<Card> generatedCards = CardGenerationManager.Instance.GenerateCards(displayableCards);
+            this.cards = GetCardGraphicsFromCardList(generatedCards);
+                                
             if (cardsCoroutines != null)
                 Array.Resize(ref cardsCoroutines, this.cards.Count);
             else
@@ -110,9 +124,11 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
 
     private void HandleAnimateCards()
     {
-        for(int i = 0; i < cards.Count; i++)
+        for (int i = 0; i < cards.Count; i++)
         {
+            //test to see if any coroutine's not null
             if (cardsCoroutines[i] != null)
+                //if the current one's not then stop it
                 StopCoroutine(cardsCoroutines[i]);
 
             cardReshuffleAnimationParams parameters = new cardReshuffleAnimationParams()
@@ -121,11 +137,47 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
                 duration = cardReshuffleSpeed,
                 curve = cardReshuffleCurve
             };
-            
+
             cardsCoroutines[i] = StartCoroutine(cards[i].AnimateCard(parameters));
         }
     }
 
+    
+    private void HandleCardUse(Card card)
+    {
+        if (!card) return;
+
+        CardGraphics cardGraphics = card.gameObject.GetComponent<CardGraphics>();
+        CardGraphics removeCardObject = cards.Find((CardGraphics c) => c.card.cardData.Equals(card.cardData));
+        
+        //if for some reason you didn't find the card, exit
+        if (!removeCardObject)
+        {
+            RuntimeMsg.Error($"Unable to find {card} card.",
+                $"The specified card: {card} was not found in the InventoryUIManager card collection!");
+            return;
+        }
+
+        //need to move all the valid coroutines for the reshuffle animations
+        //otherwise, once the chosen card has been removed from the hand deck
+        //some of them will lag behind before starting the reshuffle animation... 
+        int indexOfCard = cards.IndexOf(cardGraphics);
+
+        //ofc only do it if the card was at a position below the top one
+        if(indexOfCard < cards.Count-1)
+        {
+            //move the affected cards (the ones that where after the chosen one) back one cell
+            for (int i = indexOfCard; i < cards.Count - 1; i++)
+                cardsCoroutines[i] = cardsCoroutines[i + 1];  
+        }
+        
+        cards.Remove(removeCardObject);
+        Array.Resize(ref cardsCoroutines, cards.Count);
+        Destroy(removeCardObject.gameObject);
+
+        HandleAnimateCards();
+
+    }
 
     protected override void ReadyUpdate()
     {
@@ -133,12 +185,13 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
         //doing this as the number displayable cards only changes when either
         //the actual number of cards has changed
         //or when the spacing between cards has changed
-        //TODO: Reby is very very very very very very very very racist (she drives cars)
         //#if UNITY_EDITOR
         int currentDisplayable = displayableCards;
         float currentOccupied = spaceOccupiedByCard;
+        
         CalculateDisplayebleCards();
         UpdateCardSpace();
+
         if (cards != null && (currentDisplayable != displayableCards || currentOccupied != spaceOccupiedByCard))
             HandleAnimateCards();
 
@@ -148,7 +201,12 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
             currentCardHolded.transform.parent.position = cardPos;
         }
     }
-
+    
+    /// <summary>
+    /// Updates the space occupied by a card based on the values:
+    /// spacingCards: the amount of space relative to the size of a card
+    /// cardsWorldWidth: the width of a card in world's units
+    /// </summary>
     private void UpdateCardSpace()
     {
         spaceOccupiedByCard = cardsWorldWidth + (cardsWorldWidth * (spacingCards - 1));
@@ -159,11 +217,21 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
         //here need to establish the number of displayable cards so to be able to move the extra ones in the side deck and not have to spawn them
         CalculateDisplayebleCards();
         InventoryManager.Instance.MoveCardsToSideDeck(displayableCards - 1, InventoryManager.Instance.GetHandDeckCount() - displayableCards);
-        this.cards = CardGenerationManager.Instance.GenerateCards(displayableCards);
+        this.cards = GetCardGraphicsFromCardList(CardGenerationManager.Instance.GenerateCards(displayableCards));
         cardsCoroutines = new Coroutine[this.cards.Count];
         Position(this.cards);
     }
 
+    private List<CardGraphics> GetCardGraphicsFromCardList(List<Card> cardList)
+    {
+
+        //basically gets a list of all CardGraphics from the provided cardList
+        //and avoids all possible nulls as a safeguard
+        return cardList
+                .FindAll((Card c) => c != null)
+                .Select((Card c) => c.gameObject.GetComponent<CardGraphics>())
+                    .ToList();
+    }
     /// <summary>
     /// Calculates the position at which a card has to go in the hand deck
     /// </summary>
@@ -186,7 +254,6 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
     private Vector3 CalculateCardTargetPosition(float borderStartX, int cardsBeforeCurrent)
     {
         float yOffset = (cards != null /*&& cards.Count % 2 == 1*/) ? Mathf.Abs((cards.Count / 2) - cardsBeforeCurrent) : 0;
-        RuntimeError.Info(yOffset.ToString());
         float y = worldStartSpawn.y - (yOffset * yCurveMultiplier);
         return
             CalculateCardTargetPosition(borderStartX, cardsBeforeCurrent, y, worldStartSpawn.z);
@@ -209,7 +276,7 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
         );
     }
 
-    private void Position(List<Card> cards)
+    private void Position(List<CardGraphics> cards)
     {
 
         //print(Camera.main.ScreenToWorldPoint(new Vector3(Screen.width/2, 0, defaultCameraDistance + Camera.main.nearClipPlane)));
@@ -229,14 +296,14 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
          - (spaceOccupiedByCard * cardsCount / 2), 0);
     }
 
-    private void Position(Card card)
+    private void Position(CardGraphics card)
     {
-        Position(new List<Card>() { card });
+        Position(new List<CardGraphics>() { card });
     }
 
     private void GenerateReferenceCard()
     {
-        Card firstCard = CardGenerationManager.Instance.GenerateRefCard();
+        CardGraphics firstCard = CardGenerationManager.Instance.GenerateRefCard().GetComponentInChildren<CardGraphics>();
         referenceCardRenderer = firstCard.GetComponent<MeshRenderer>();
         Position(firstCard);
         firstCard.transform.parent.gameObject.SetActive(false);
@@ -272,30 +339,6 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
 
         // Create rect in screen space and return - does not account for camera perspective
         return new Rect(origin.x, Screen.height - origin.y, extent.x - origin.x, origin.y - extent.y);
-    }
-
-    public static void GetCardInfoScreen(CardScriptable card)
-    {
-        GameObject screen = GameScreensManager.Instance.SpawnScreen("cardInfo");
-        screen.GetComponentInChildren<Card>().SetUpInfoCard(card);
-
-        //this only when the card doesn't have any effects
-        if (card.cardEffects == null || card.cardEffects.Length == 0) return;
-        GameObject[] effects = CardGenerationManager.Instance.CreateEffectsEntries(card.cardEffects);
-
-        GameObject effectsScrollViewContentObject = GameObject.FindWithTag(effectsLabel);
-
-        //removing previous children
-        for (int i = 0; i < effectsScrollViewContentObject.transform.childCount; i++)
-        {
-            Destroy(effectsScrollViewContentObject.transform.GetChild(i).gameObject);
-        }
-
-        for (int i = 0; i < effects.Length; i++)
-        {
-            effects[i].transform.SetParent(effectsScrollViewContentObject.transform);
-        }
-
     }
 
     private void OnDestroy()
