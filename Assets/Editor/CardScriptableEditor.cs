@@ -38,9 +38,9 @@ public class CardScriptableEditor : Editor
             GUILayout.Height(25)
         }));
 
-        cardType.SetValue(current, (int)(CardTypeEnum)EditorGUILayout.EnumPopup("Card Type", (CardTypeEnum)cardType.GetValue(current)));
+        cardType.SetValue(current, (int)(cardTypeEnum)EditorGUILayout.EnumPopup("Card Type", (cardTypeEnum)cardType.GetValue(current)));
         
-        if ((CardTypeEnum)cardType.GetValue(current) != CardTypeEnum.CHARACTER)
+        if ((cardTypeEnum)cardType.GetValue(current) != cardTypeEnum.CHARACTER)
         {
             damageAmount.SetValue(current, EditorGUILayout.Slider(1, HpManager.maxHp, (float)damageAmount.GetValue(current)));
             //do card effects here

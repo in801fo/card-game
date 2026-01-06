@@ -1,28 +1,26 @@
 using System;
-using UnityEngine;
 
-public abstract class Effect
+public interface IEffect
 {
     /// <summary>
     /// Amount of seconds which the effects last
     /// </summary>
-    public float secondsDuration;
+    public static float secondsDuration { get; set; }
 
     /// <summary>
     /// Amount of turns which the effects last
     /// </summary>
-    public int turnDuration;
+    public static int turnDuration { get; set; }
 
-    public Action<effectTarget, int, float, effectsEnum> OnEffectApplied; 
-    public abstract void Apply();
+    public static Action<effectTarget, int, float, effectsEnum> OnEffectApplied { get; set; }
+    public static effectTarget target { get; set; }
 
-    public effectTarget target;
+    public static effectsEnum effectAsEnum { get; set; }
 
-    public Effect(effectTarget target, int turnDuration, float secondsDuration)
+    public static void Apply()
     {
-        this.target = target;
-        this.turnDuration = turnDuration;
-        this.secondsDuration = secondsDuration;
+        RuntimeMsg.Info("Applied Effect!", $"Effect {effectAsEnum} applied!");
+        OnEffectApplied?.Invoke(target, turnDuration, secondsDuration, effectAsEnum);
     }
 
     /*public List<Player> GetEffectArea(){

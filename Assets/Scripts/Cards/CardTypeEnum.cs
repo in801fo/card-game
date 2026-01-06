@@ -1,4 +1,4 @@
-public enum CardTypeEnum
+public enum cardTypeEnum
 {
     ACTION = 0,
     CHARACTER = 1,

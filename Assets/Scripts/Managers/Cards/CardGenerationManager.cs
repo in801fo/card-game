@@ -57,7 +57,7 @@ public class CardGenerationManager : MonoBehaviour
         cardGraphics.SetUpGameCard(GetCardFrontIndex(card.cardData.type), card);
     }
 
-    public float GetCardFrontIndex(CardTypeEnum type)
+    public float GetCardFrontIndex(cardTypeEnum type)
     {
         return (float)cardsHeight * ((int)type) / cardBackAtlas.height;
     }
@@ -110,18 +110,18 @@ public class CardGenerationManager : MonoBehaviour
         return playerCards;
     }
     
-    private void AttachCorrectCardTypeScript(GameObject cardGO, CardTypeEnum type)
+    private void AttachCorrectCardTypeScript(GameObject cardGO, cardTypeEnum type)
     {
         switch (type)
         {
-            case CardTypeEnum.CHARACTER:
+            case cardTypeEnum.CHARACTER:
                 cardGO.AddComponent<CharacterCard>();
             break;
-            case CardTypeEnum.TRAP:
+            case cardTypeEnum.TRAP:
                 cardGO.AddComponent<TrapCard>();
             break;
-            case CardTypeEnum.ICARD:
-                cardGO.AddComponent<ICard>();
+            case cardTypeEnum.ICARD:
+                cardGO.AddComponent<InterestCard>();
                 break;
             default:
                 cardGO.AddComponent<ActionCard>();
@@ -139,7 +139,7 @@ public class CardGenerationManager : MonoBehaviour
         if (refCard != null) return refCard;
 
         refCard = Instantiate(cardPrefab, Vector3.zero, Quaternion.Euler(new Vector3(0, 0, 90)));
-        AttachCorrectCardTypeScript(refCard, CardTypeEnum.ACTION);
+        AttachCorrectCardTypeScript(refCard, cardTypeEnum.ACTION);
 
         /*SetUpGameCard(InventoryManager.Instance.GetHandDeck()[0],
                     refCard);*/

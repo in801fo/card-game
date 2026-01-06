@@ -1,11 +1,21 @@
+using System.Linq;
 using UnityEngine;
 
 public abstract class Card : MonoBehaviour
 {
-    private bool Initialized;
+    protected bool Initialized;
     public CardScriptable cardData { get; private set; }
+    public virtual void UseCard()
+    {
+        if (!Initialized)
+        {
+            RuntimeMsg.Error("Tried using card before it was initialized!", "Tried using card before it was initialized!");
+            return;
+        }
+        if (cardData.cardEffects == null || cardData.cardEffects.Length == 0) return;
 
-    public abstract void UseCard();
+        EffectManager.ApplyEffects(cardData.cardEffects.ToList());
+    }
 
     public void InitializeCard(CardScriptable cardData)
     {

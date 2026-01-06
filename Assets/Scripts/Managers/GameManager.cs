@@ -1,9 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using NUnit.Framework.Constraints;
-using UnityEditor.Search;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -15,6 +11,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private InventoryUIManager inventoryUIManager;
     [SerializeField] private CardGenerationManager cardGenerationManager;
     [SerializeField] private CardInteractionManager cardInteractionManager;
+    [SerializeField] private HpManager healthManager;
 
     private static List<GameObject> managers = new List<GameObject>();
 
@@ -31,10 +28,13 @@ public class GameManager : MonoBehaviour
         this.transform.SetParent(managersHolder.transform);
         managers.Add(Instantiate(inventoryManager.gameObject));
         managers.Add(Instantiate(screensManager.gameObject));
+
         InventoryUIManager inventoryUiManager = Instantiate(inventoryUIManager.gameObject).GetComponent<InventoryUIManager>();
         managers.Add(inventoryUiManager.gameObject);
+        
         managers.Add(Instantiate(cardInteractionManager.gameObject));
         managers.Add(Instantiate(cardGenerationManager.gameObject));
+        managers.Add(Instantiate(healthManager.gameObject));
 
         //here getting the setting the parent to the managersHolder
         for (int i = 0; i < managers.Count; i++)

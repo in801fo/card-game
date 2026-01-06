@@ -142,11 +142,6 @@ public class CardInteractionManager : MonoBehaviour
         ScreenInitializer<Card> screenInitializer = screen.GetComponent<ScreenInitializer<Card>>();
         if(screenInitializer != null)
             screenInitializer.Initialize(card);
-        
-        //TODO: WEIRD PROBLEM WITH DESTROYING AND ADDING BACK ITEMS INTO A SCROLL VIEW, FOR NOW JUST POOL ALL EFFECTS AND DISABLE ALL NON RELEVANT ONES
-
-        
-
     }
 
     private void UseCurrentlySelectedCard()

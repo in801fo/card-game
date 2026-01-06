@@ -1,7 +1,14 @@
+using UnityEngine;
+
 public class ActionCard : Card
 {
+    [field: SerializeField] public int damangeAmount { get; private set; }
+
     public override void UseCard()
     {
-        RuntimeMsg.Error("Not Yet Implemented");
+        base.UseCard();
+        HpManager.Instance.LowerHp(damangeAmount);
+        //if (cardData.cardEffects != null && cardData.cardEffects.Length > 0)
+            //EffectManager.ApplyEffects(EffectsEnumToEffectConverter.GetEffectFromEnum(cardData.cardEffects));
     }
 }
