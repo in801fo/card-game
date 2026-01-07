@@ -7,7 +7,7 @@ public class ActionCard : Card
     public override void UseCard()
     {
         base.UseCard();
-        HpManager.Instance.LowerHp(damangeAmount);
+        HpManager.Instance.LowerHp(GameManager.localPlayerHashCode, damangeAmount);
         //if (cardData.cardEffects != null && cardData.cardEffects.Length > 0)
             //EffectManager.ApplyEffects(EffectsEnumToEffectConverter.GetEffectFromEnum(cardData.cardEffects));
     }

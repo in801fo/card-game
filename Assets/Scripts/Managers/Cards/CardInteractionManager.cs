@@ -13,7 +13,7 @@ public class CardInteractionManager : MonoBehaviour
     public static Action<Card> OnCardUse;
     public static Action<Card> OnCardRelease;
     /// <summary>
-    /// Only triggered on the first frame in which a card has started being holded
+    /// Only triggered on the first frame in which a card has started being held
     /// </summary>
     public static Action<Card> OnCardHold;
     private Card currentCardHover = null;

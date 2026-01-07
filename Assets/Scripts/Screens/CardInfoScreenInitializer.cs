@@ -77,7 +77,6 @@ public class CardInfoScreenInitializer : ScreenInitializer<Card>
         TextMeshProUGUI textArea = currentEntryPrefab.GetComponentInChildren<TextMeshProUGUI>();
         textArea.SetText(effect.ToString());
 
-
         currentEntryPrefab.transform.SetParent(contentObjectEffectsScrollView.transform);
         effectEntries.Add(effectEntryUI);
         currentEntryPrefab.SetActive(state);

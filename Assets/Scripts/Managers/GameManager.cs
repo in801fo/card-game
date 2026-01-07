@@ -13,6 +13,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private CardInteractionManager cardInteractionManager;
     [SerializeField] private HpManager healthManager;
 
+    public static Dictionary<int, playerInfo> players { get; private set; } = new Dictionary<int, playerInfo>();
     private static List<GameObject> managers = new List<GameObject>();
 
     public static GameObject managersHolder { get; private set; }
@@ -21,6 +22,8 @@ public class GameManager : MonoBehaviour
     private static int count;
 
     private static int actualInheriting;
+
+    public static int localPlayerHashCode;
 
     private void Awake()
     {
@@ -35,6 +38,12 @@ public class GameManager : MonoBehaviour
         managers.Add(Instantiate(cardInteractionManager.gameObject));
         managers.Add(Instantiate(cardGenerationManager.gameObject));
         managers.Add(Instantiate(healthManager.gameObject));
+
+        localPlayerHashCode = GetHashCode();
+
+        players.Add(localPlayerHashCode, new playerInfo { Name = "In801fo", Pronouns = pronouns.HEHIM, playerHashCode=localPlayerHashCode });
+
+
 
         //here getting the setting the parent to the managersHolder
         for (int i = 0; i < managers.Count; i++)
@@ -63,5 +72,5 @@ public class GameManager : MonoBehaviour
     }
 
     public static void ValidateInitialization() => count++;
-    
+
 }
