@@ -58,7 +58,7 @@ public class DrawDebugUI : MonoBehaviour
         CreateDebugCanvas();
         CreateDebugScrollView();
         CreateSaveLoadInterface();
-        CreateErrorConsole();
+        if(errorConsole == null) CreateErrorConsole();
 
         fieldDebugCollection.SetActive(false);
         errorConsole.SetActive(false);
@@ -95,13 +95,22 @@ public class DrawDebugUI : MonoBehaviour
         saveLoadInterface.transform.SetParent(fieldDebugCollection.transform);
     }
 
-    private void CreateErrorConsole(){
+    public void CreateErrorConsole()
+    {
         //error console
         errorConsole = Instantiate(_errorConsole, Vector3.zero, Quaternion.identity);
-        errorConsole.transform.SetParent(parentCanvas.transform);
+
+        errorConsole.transform.SetParent(parentCanvas != null ? parentCanvas.transform : GenerateCanvas("errorConsoleCanvas"));
         RectTransform consoleTransform = errorConsole.GetComponentInChildren<RectTransform>();
         consoleTransform.anchoredPosition = Vector3.zero;
         consoleTransform.sizeDelta = new Vector2(Screen.width, consoleTransform.sizeDelta.y);
+    }
+    
+    private Transform GenerateCanvas(string canvasName = "")
+    {
+        GameObject tmpCanvas = new GameObject(string.IsNullOrEmpty(canvasName) ? "Canvas" : canvasName);
+        tmpCanvas.AddComponent<Canvas>();
+        return tmpCanvas.transform;
     }
 
     /// <summary>

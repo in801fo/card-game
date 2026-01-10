@@ -1,0 +1,7 @@
+Come hai associato ogni valore dell'enum effectsEnum al suo tipo?
+
+    Se controlli nello script ConvertEnumToEffectInvocation noterai un dizionario in cui sono associati,
+    nella forma key --> value, ad ogni singolo valore di effectsEnum il tipo della classe che mirano a rappresentare.
+
+    Dopo di che, una volta che è fatta richiesta di applicazione degli effetti di una carta tramite la funzione DoIt, dagli effetti passati per valore
+    al metodo viene ricavato dal dizionario il tipo ad essi associati ed estratto e invocato il metodo "Apply". 

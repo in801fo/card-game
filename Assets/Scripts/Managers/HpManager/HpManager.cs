@@ -1,70 +1,184 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using Unity.Netcode;
 using UnityEngine;
 
-public class HpManager : MonoBehaviour
+public class HpManager : NetworkBehaviour
 {
     public static HpManager Instance;
 
-    public float _hp { get; private set; } = maxHp;
+    /// <summary>
+    /// Local player's Health Points
+    /// </summary>
+    public float Hp { get; private set; } = maxHp;
 
     public const float maxHp = 100;
 
     /// <summary>
-    /// First int is the Hashcode of the player which has lost/gained the amount specified by the float 
+    /// First int is the playerId of the player which has lost/gained the amount specified by the float 
     /// </summary>
-    public static Action<int, float> OnHealthChange;
-    public static Action<int> OnHealthZero;
+    public static Action<ulong, float> OnHealthChange;
+    public static Action<ulong> OnHealthZero;
+
+    private Dictionary<ulong, float> playerHps = new Dictionary<ulong, float>();
 
     private void Awake()
     {
         if (Instance == null) Instance = this;
         else Destroy(this);
+
+        InitializePlayersHps();
     }
 
-    private void Update()
+    private void InitializePlayersHps()
     {
-        if (Input.GetKeyDown(KeyCode.DownArrow)) LowerHp(GameManager.localPlayerHashCode, 10);
-        if (Input.GetKeyDown(KeyCode.UpArrow)) IncrementHp(GameManager.localPlayerHashCode, 10);
+        List<ulong> playerIds = GameManager.playersDict.Keys.ToList();
+        RuntimeMsg.Info("Executing initialization...");
+
+        for (int i = 0; i < playerIds.Count; i++)
+        {
+            playerHps.Add(playerIds[i], HpManager.maxHp);
+        }
+
     }
 
-    //[ClientRpc]
-    public void LowerHp/*ClientRpc*/(int hashCode, float damage)
+    /*private void Update()
     {
-        if (_hp - damage <= 0)
-        {
-            _hp = 0;
-            OnHealthZero?.Invoke(hashCode);
+        if (Input.GetKeyDown(KeyCode.DownArrow) && !NetworkManager.Singleton.IsServer){
+            RuntimeMsg.Info("Lower: Executing On Client");
+            LowerHpServer_Rpc(10, NetworkManager.LocalClientId);
         }
-        else
+        if (Input.GetKeyDown(KeyCode.UpArrow) && !NetworkManager.Singleton.IsServer)
         {
-            _hp -= damage;
-            OnHealthChange?.Invoke(hashCode, -damage);
+            RuntimeMsg.Info("Increase: Executing On Client");
+            IncrementHpServer_Rpc(10, NetworkManager.LocalClientId);
         }
+    }*/
+
+    /// <summary>
+    /// Ask the server to reduce the HPs of the player specified by the id
+    /// </summary>
+    /// <param name="damage">The amount of damage to apply</param>
+    /// <param name="clientId">The client id to damage</param>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void LowerHpServer_Rpc(float damage, ulong clientId)
+    {
+        LowerHpSpecificGroupServer_Rpc(damage, new ulong[1] { clientId });
     }
 
-    /*
-        clients shall call this one
-        [ServerRpc]
-        public void LowerHpServerRpc(int hashCode, float damage){
-            basically just broadcast it
-            LowerHpClientRpc(int hashCode, float damage)
+    /// <summary>
+    /// Ask the server to reduce the HPs of the player specified by the id
+    /// </summary>
+    /// <param name="damage">The amount of damage to apply</param>
+    /// <param name="clientId">The client id to damage</param>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void LowerHpSpecificGroupServer_Rpc(float damage, ulong[] playerIds)
+    {
+        for (int i = 0; i < playerIds.Length; i++)
+        {
+            ulong senderClientId = playerIds[i];
+            RuntimeMsg.Info($"Received Request to lower HP for {senderClientId}");
+
+            float playerHpAmount;
+
+            if (!SafeGetPlayerHps(senderClientId, out playerHpAmount)) continue;
+
+            if (playerHpAmount - damage <= 0)
+            {
+                playerHpAmount = 0;
+                OnHealthZeroClient_Rpc(senderClientId);
+            }
+            else
+            {
+                playerHpAmount -= damage;
+                OnHealthChangeClient_Rpc(senderClientId, -damage);
+            }
+
+            playerHps[senderClientId] = playerHpAmount;
         }
+    }
     
-    */
 
 
-    public void IncrementHp(int hashCode, float amount)
+    [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
+    public void OnHealthZeroClient_Rpc(ulong playerId)
     {
-        float reportAmount = amount;
-        if (_hp + amount >= maxHp) {
-            _hp = maxHp;
-            //useful only in the case in which _hp + amount > maxHp
-            reportAmount = maxHp - _hp;
-        }
-        else _hp += amount;
-
-        OnHealthChange?.Invoke(hashCode, reportAmount);
+        RuntimeMsg.Info("Received: OnHealthZero");
+        OnHealthZero?.Invoke(playerId);
     }
 
 
+    [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
+    public void OnHealthChangeClient_Rpc(ulong playerId, float amount)
+    {
+        RuntimeMsg.Info("Received: OnHealthChangeClientRpc");
+        if (playerId == NetworkManager.LocalClientId) Hp -= amount;
+        OnHealthChange?.Invoke(playerId, amount);
+    }
+
+    public void IncrementHpServer_Rpc(float amount, ulong playerIds)
+    {
+        IncrementHpSpecificGroupServer_Rpc(amount, new ulong[1]{ playerIds });
+    }
+
+    /// <summary>
+    /// Ask the server to increment the HPs of the player specified by the id
+    /// </summary>
+    /// <param name="amount">The amount of damage</param>
+    /// <param name="serverRpcParams">Leave this as it is. Not passing directly the playerId from the clients as it is bad practice since it would be pretty easy for hackers to send a playerId which is not theirs.</param>
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void IncrementHpSpecificGroupServer_Rpc(float amount, ulong[] playerIds)
+    {
+        for(int i = 0; i < playerIds.Length; i++)
+        {
+            ulong senderClientId = playerIds[i];
+            RuntimeMsg.Info($"Received Request to increment HP for {senderClientId}");
+
+            float currentAmountSender;
+
+
+            if (!SafeGetPlayerHps(senderClientId, out currentAmountSender)) continue;
+
+            //cap on the server the health change if needed
+            if (currentAmountSender + amount >= maxHp)
+            {
+                //maybe in the future you could add a "shield" which is made of the surplus of hps garnered through the cards
+                currentAmountSender = maxHp;
+
+                //useful only in the case in which _hp + amount > maxHp
+                amount = maxHp - Hp;
+            }
+            else currentAmountSender += amount;
+
+            playerHps[senderClientId] = currentAmountSender;
+
+            //once capping is done broadcast to all clients the amount and the player which received the damage
+            OnHealthChangeClient_Rpc(senderClientId, amount);
+        }
+        
+    }
+
+    /// <summary>
+    /// Tries to get the current HPs for the player specified by the clientId
+    /// </summary>
+    /// <param name="clientId">The id of the player which one wants to retrieve</param>
+    /// <param name="currentHps">The variable in which to put the retrieved value</param>
+    /// <returns>False if the player specified wasn't found in the dictionary.<para> True if otherwise.</para></returns>
+    private bool SafeGetPlayerHps(ulong clientId, out float currentHps)
+    {
+        try
+        {
+            currentHps = playerHps[clientId];
+        }
+        catch (KeyNotFoundException e)
+        {
+            RuntimeMsg.Error(e);
+            currentHps = -1;
+            return false;
+        }
+
+        return true;
+    }
 }

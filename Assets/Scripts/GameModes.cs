@@ -1,4 +1,4 @@
-public enum GameModes
+public enum gameModes
 {
     /// <summary>
     /// The player's cards are a mix of random cards from all decks.

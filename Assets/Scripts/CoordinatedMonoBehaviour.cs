@@ -43,6 +43,5 @@ public abstract class CoordinatedMonoBehaviour : MonoBehaviour
     private void OnDestroy()
     {
         GameManager.OnDoneGenerating -= Beginning;
-
     }
 }

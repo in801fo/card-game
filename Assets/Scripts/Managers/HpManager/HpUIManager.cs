@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class HpUIManager : MonoBehaviour
@@ -19,13 +20,10 @@ public class HpUIManager : MonoBehaviour
 
     private void GenerateHpUI()
     {
-        //pseudo code
-        //GenerateHpUI(GameManager.GetAllPlayerInfos());
-        //GenerateHpUI(null);
-        GeneratePlayerHealthEntry(GameManager.players[GameManager.localPlayerHashCode]);
+        RuntimeMsg.Info("Generating player HP UI");
+        GenerateHpUI(GameManager.playersDict.Values.ToList());
     }
 
-    //need to provide 
     private void GenerateHpUI(List<playerInfo> playersInfos)
     {
         for (int i = 0; i < playersInfos.Count; i++)

@@ -54,7 +54,7 @@ public class CardGenerationManager : MonoBehaviour
             return;
 
         card.InitializeCard(cardScriptable);
-        cardGraphics.SetUpGameCard(GetCardFrontIndex(card.cardData.type), card);
+        cardGraphics.SetUpGameCard(GetCardFrontIndex(card.cardData.Type), card);
     }
 
     public float GetCardFrontIndex(cardTypeEnum type)
@@ -102,7 +102,7 @@ public class CardGenerationManager : MonoBehaviour
             
             GameObject actualCard = cardParentGO.transform.GetChild(0).gameObject;
 
-            AttachCorrectCardTypeScript(actualCard, cards[i].type);
+            AttachCorrectCardTypeScript(actualCard, cards[i].Type);
             playerCards.Add(cardParentGO.GetComponentInChildren<Card>());
             SetUpGameCard(cards[i], cardParentGO.GetComponentInChildren<CardGraphics>(), playerCards[i]);
         }

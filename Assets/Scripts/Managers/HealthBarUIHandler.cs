@@ -1,5 +1,4 @@
 using TMPro;
-using UnityEditor.Overlays;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -22,8 +21,6 @@ public class HealthBarUIHandler : MonoBehaviour
     }
     public playerInfo? _myPlayer;
 
-    private float currentLife = HpManager.maxHp;
-
     private float initialPreferredSize;
 
     private void Awake()
@@ -35,9 +32,9 @@ public class HealthBarUIHandler : MonoBehaviour
         HpManager.OnHealthZero += HandleCheckLifeZero;
     }
 
-    private void HandleCheckLifeZero(int hashCode)
+    private void HandleCheckLifeZero(ulong playerId)
     {
-        if (hashCode.Equals(_myPlayer.Value.playerHashCode)) HandlePlayerDeath();
+        if (playerId.Equals(_myPlayer.Value.playerId)) HandlePlayerDeath();
     }
 
     public void Initialize(playerInfo? info)
@@ -51,14 +48,31 @@ public class HealthBarUIHandler : MonoBehaviour
                 Name = Random.Range(10000, 5000).ToString(),
                 Pronouns = pronouns.THEYTHEM
             };
-
         }
-        playerNameSpace.SetText(_myPlayer.Value.Name);
+
+        //rare occasions in which the packet with the player's name is lost...
+        if (_myPlayer.Value.Name.IsEmpty)
+        {
+            _myPlayer = new playerInfo {
+                Name = Random.Range(10000, 5000).ToString(),
+                Pronouns = _myPlayer.Value.Pronouns,
+                playerId = _myPlayer.Value.playerId
+            };
+        }
+
+
+        playerNameSpace.SetText(_myPlayer.Value.Name.ToString());
     }
 
-    private void HandleCheckHealthChange(int hashCode, float amount)
+    /// <summary>
+    /// Changes the bar length only if the player which received the damage matches the one
+    /// which this instance represents
+    /// </summary>
+    /// <param name="playerId"></param>
+    /// <param name="amount"></param>
+    private void HandleCheckHealthChange(ulong playerId, float amount)
     {
-        if (hashCode.Equals(_myPlayer.Value.playerHashCode)) ChangeLife(amount);
+        if (playerId.Equals(_myPlayer.Value.playerId)) ChangeLife(amount);
     }
 
     private void ChangeLife(float amount)
@@ -68,6 +82,7 @@ public class HealthBarUIHandler : MonoBehaviour
             RuntimeMsg.Warning("Trying to change life points after player death.");
             return;
         }
+        
         //proportion
         float toApply = initialPreferredSize / HpManager.maxHp * amount;
         

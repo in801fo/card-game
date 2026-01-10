@@ -1,14 +1,29 @@
 
 using System;
+using Unity.Collections;
+using Unity.Netcode;
 
 /// <summary>
 /// Struct that represents a Player
 /// </summary>
-public struct playerInfo
+public struct playerInfo : INetworkSerializable, IEquatable<playerInfo>
 {
-    public string Name;
+    //NAMES CAPPED AT 64 CHARS!!
+    public FixedString64Bytes Name;
     public pronouns Pronouns;
-    public int playerHashCode;
+    public ulong playerId;
+
+    public bool Equals(playerInfo other)
+    {
+        return this.playerId == other.playerId;
+    }
+
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+    {
+        serializer.SerializeValue(ref Name);
+        serializer.SerializeValue(ref Pronouns);
+        serializer.SerializeValue(ref playerId);
+    }
 
     //TODO: add more info that needs to be carried out into the game from other screens, such as:
     //Chosen deck (if ever implemented ;) )
