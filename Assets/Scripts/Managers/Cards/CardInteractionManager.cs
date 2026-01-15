@@ -10,10 +10,9 @@ public class CardInteractionManager : MonoBehaviour
     [Tooltip("The amount of time required for a card to be grabbed and moved around by the player")]
     [SerializeField] private float minTimeHold; 
     public static Action<Card> OnCardCursorHover;
-    public static Action<Card> OnCardUse;
     public static Action<Card> OnCardRelease;
     /// <summary>
-    /// Only triggered on the first frame in which a card has started being holded
+    /// Only triggered on the first frame in which a card has started being held
     /// </summary>
     public static Action<Card> OnCardHold;
     private Card currentCardHover = null;
@@ -147,7 +146,6 @@ public class CardInteractionManager : MonoBehaviour
     private void UseCurrentlySelectedCard()
     {
         if (!currentSelected) return;
-        OnCardUse?.Invoke(currentSelected);
         currentSelected.UseCard();
     }
 

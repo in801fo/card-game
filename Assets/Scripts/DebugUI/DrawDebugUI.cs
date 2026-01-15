@@ -40,6 +40,7 @@ public class DrawDebugUI : MonoBehaviour
 
     private void Awake(){
         InitializeUI();
+        Application.logMessageReceived += HandleUnityLog;
     }
     
 
@@ -54,14 +55,33 @@ public class DrawDebugUI : MonoBehaviour
     }
 
 
-    private void InitializeUI(){
+    private void InitializeUI() {
         CreateDebugCanvas();
         CreateDebugScrollView();
         CreateSaveLoadInterface();
-        CreateErrorConsole();
+        if (errorConsole == null) CreateErrorConsole();
 
         fieldDebugCollection.SetActive(false);
         errorConsole.SetActive(false);
+    }
+    
+    private void HandleUnityLog(string logString, string stackTrace, LogType type)
+    {
+        switch (type)
+        {
+            case LogType.Error:
+                RuntimeMsg.Error(logString, stackTrace);
+                break;
+            case LogType.Warning:
+                RuntimeMsg.Warning(logString, stackTrace);
+                break;
+            case LogType.Log:
+                RuntimeMsg.Info(logString, stackTrace);
+                break;
+            default:
+                RuntimeMsg.Error(logString, stackTrace);
+                break;
+        }
     }
 
     private void CreateDebugCanvas(){
@@ -95,13 +115,22 @@ public class DrawDebugUI : MonoBehaviour
         saveLoadInterface.transform.SetParent(fieldDebugCollection.transform);
     }
 
-    private void CreateErrorConsole(){
+    public void CreateErrorConsole()
+    {
         //error console
         errorConsole = Instantiate(_errorConsole, Vector3.zero, Quaternion.identity);
-        errorConsole.transform.SetParent(parentCanvas.transform);
+
+        errorConsole.transform.SetParent(parentCanvas != null ? parentCanvas.transform : GenerateCanvas("errorConsoleCanvas"));
         RectTransform consoleTransform = errorConsole.GetComponentInChildren<RectTransform>();
         consoleTransform.anchoredPosition = Vector3.zero;
         consoleTransform.sizeDelta = new Vector2(Screen.width, consoleTransform.sizeDelta.y);
+    }
+    
+    private Transform GenerateCanvas(string canvasName = "")
+    {
+        GameObject tmpCanvas = new GameObject(string.IsNullOrEmpty(canvasName) ? "Canvas" : canvasName);
+        tmpCanvas.AddComponent<Canvas>();
+        return tmpCanvas.transform;
     }
 
     /// <summary>
@@ -202,9 +231,15 @@ public class DrawDebugUI : MonoBehaviour
         }
     }
 
-    public void RefreshUI(){
+    public void RefreshUI()
+    {
         DestroyOutdatedUI();
         GenerateDebugUIForValue(mainSerializingObject, true);
+    }
+
+    private void OnDestroy()
+    {
+        Application.logMessageReceived -= HandleUnityLog;
     }
 
 }

@@ -95,7 +95,7 @@ public class CardGraphics : MonoBehaviour
 
     public void SetUpInfoCard(Card card)
     {
-        SetUpGameCard(CardGenerationManager.Instance.GetCardFrontIndex(card.cardData.type), card);
+        SetUpGameCard(CardGenerationManager.Instance.GetCardFrontIndex(card.cardData.Type), card);
         descBox.SetText(card.cardData.Description);
         damageBox.SetText("Damage: " + card.cardData.damageAmount);
         isInfoCard = true;

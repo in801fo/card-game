@@ -53,6 +53,12 @@ public class DebugUIManager : MonoBehaviour
         if (!isReadOnly) changer.StartVariableUpdate(value, avoidUpdatingFields);
     }
 
+    public static void GenerateOnlyErrorConsole()
+    {
+        drawer.CreateErrorConsole();
+    }
+
+
     public static bool HasToBeExpanded(object propertyValue) {
         if (propertyValue == null) return false;
         return !defaultTypes.Contains(propertyValue.GetType().ToString());

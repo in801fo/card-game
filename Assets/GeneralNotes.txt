@@ -1,0 +1,2 @@
+To create a screen to use as UI you must place all UI elements on the UI layer.
+If the UI contains GameObjects, such as a card GameObject Prefab for example, you have to place it on the "InFrontOfUI" layer.

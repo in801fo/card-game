@@ -1,8 +1,9 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public abstract class ScreenInitializer<T> : MonoBehaviour
+public class ScreenInitializer<T> : MonoBehaviour
 {
     public string screenID
     {
@@ -20,15 +21,34 @@ public abstract class ScreenInitializer<T> : MonoBehaviour
 
     protected string _screenID;
 
-    [field: SerializeField] public Button closeButton { get; protected set; }
+    [field: SerializeField] protected Button closeButton { get; set; }
+    [field: SerializeField] protected TextMeshProUGUI screenHeading { get; set; }
+
+    [SerializeField] protected string screenHeadingText;
 
     protected bool hasInitialized;
 
-    private void Awake()
+    protected virtual void Awake()
     {
-        if (closeButton != null) closeButton.onClick.AddListener(() => GameScreensManager.CloseCurrentScreen());
+        if (closeButton != null) closeButton.onClick.AddListener(GameScreensManager.CloseCurrentScreen);
+        else RuntimeMsg.Warning($"No close button instance was provided for screen {this.name}");
+
+        SetScreenHeading(string.Empty, false);
     }
 
+    protected void SetScreenHeading(string str = "", bool overrideEditorHeading = true)
+    {
+        if (overrideEditorHeading) screenHeadingText = str;
+
+        if (screenHeading != null) screenHeading.SetText(screenHeadingText);
+        else RuntimeMsg.Warning($"No screen heading instance was provided for screen {this.name}");
+    
+    }
+
+    /// <summary>
+    /// Place the base of the method at the end of the overridden versions
+    /// </summary>
+    /// <param name="initializingValues"></param>
     public virtual void Initialize(T initializingValues)
     {
         hasInitialized = true;   

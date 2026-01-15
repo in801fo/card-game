@@ -29,7 +29,7 @@ public class CardGenerationManager : MonoBehaviour
     {
         if (!Instance) Instance = this;
         else Destroy(this);
-        CardInteractionManager.OnCardUse += HandleCardUse;
+        Card.OnCardUseReady += HandleCardUse;
         InventoryManager.OnCardMoved += HandleCardMoved;
     }
 
@@ -54,7 +54,7 @@ public class CardGenerationManager : MonoBehaviour
             return;
 
         card.InitializeCard(cardScriptable);
-        cardGraphics.SetUpGameCard(GetCardFrontIndex(card.cardData.type), card);
+        cardGraphics.SetUpGameCard(GetCardFrontIndex(card.cardData.Type), card);
     }
 
     public float GetCardFrontIndex(cardTypeEnum type)
@@ -91,6 +91,11 @@ public class CardGenerationManager : MonoBehaviour
 
         for (int i = 0; i < generationAmount; i++)
         {
+            if(cards[i] == null)
+            {
+                RuntimeMsg.Warning($"Skipping element {i} as it was null");
+                continue;
+            }
             //if you find another card present in the hand deck with identical info to the current (cards[i]) 
             //then skip creation for current card 
             if (playerCards.FindIndex(
@@ -102,7 +107,7 @@ public class CardGenerationManager : MonoBehaviour
             
             GameObject actualCard = cardParentGO.transform.GetChild(0).gameObject;
 
-            AttachCorrectCardTypeScript(actualCard, cards[i].type);
+            AttachCorrectCardTypeScript(actualCard, cards[i].Type);
             playerCards.Add(cardParentGO.GetComponentInChildren<Card>());
             SetUpGameCard(cards[i], cardParentGO.GetComponentInChildren<CardGraphics>(), playerCards[i]);
         }

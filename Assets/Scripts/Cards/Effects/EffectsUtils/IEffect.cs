@@ -12,8 +12,8 @@ public interface IEffect
     /// </summary>
     public static int turnDuration { get; set; }
 
-    public static Action<effectTarget, int, float, effectsEnum> OnEffectApplied { get; set; }
-    public static effectTarget target { get; set; }
+    public static Action<consequenceTarget, int, float, effectsEnum> OnEffectApplied { get; set; }
+    public static consequenceTarget target { get; set; }
 
     public static effectsEnum effectAsEnum { get; set; }
 
@@ -29,29 +29,4 @@ public interface IEffect
     
     }
     */
-}
-
-public enum effectTarget
-{
-    /// <summary>
-    /// Affects only the local player
-    /// </summary>
-    LOCAL,
-    /// <summary>
-    /// All players except for local are affected
-    /// </summary>
-    ALL_EX,
-    /// <summary>
-    /// All players included the local player
-    /// </summary>
-    ALL_INC,
-    /// <summary>
-    /// A specific player is affected
-    /// </summary>
-    SPECIFIC_SINGLE,
-
-    /// <summary>
-    /// A specific group of people are affected
-    /// </summary>
-    SPECIFIC_GROUP
 }

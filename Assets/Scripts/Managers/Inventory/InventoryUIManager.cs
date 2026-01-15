@@ -37,6 +37,9 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
     {
         base.Awake();
         defaultCameraDistance += Camera.main.nearClipPlane + cardZDistance;
+        CardInteractionManager.OnCardHold += HandleCardHold;
+        CardInteractionManager.OnCardRelease += HandleCardRelease;
+        Card.OnCardUseReady += HandleCardUse;
     }
 
     
@@ -49,10 +52,6 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
         spaceOccupiedByCard = cardsWorldWidth + (cardsWorldWidth * (spacingCards - 1));
 
         InventoryManager.OnCardAddedToHandDeck += HandleCardAdded;
-        CardInteractionManager.OnCardHold += HandleCardHold;
-        CardInteractionManager.OnCardRelease += HandleCardRelease;
-        CardInteractionManager.OnCardUse += HandleCardUse;
-
 
         HandleCardGeneration();
     }

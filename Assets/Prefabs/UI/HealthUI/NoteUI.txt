@@ -1,0 +1,5 @@
+Per diminuire la lunghezza della barra della vita basta ridurre il valore di "preferredWidth" nel component: layout element
+
+TODO: inserire script per omettere tutto il testo oltre un determinato numero di caratteri immessi in un username (in pratica inserire "..." in un username oltre un certo numero di caratteri)
+
+bro in oltre devi cambiare lo sprite per la barra della vita che è da vomitare --06/01/2026
