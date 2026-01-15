@@ -1,67 +1,75 @@
-using System;
+using System.Collections.Generic;
 using System.Linq;
 using Unity.Netcode;
-using UnityEngine;
 
 public class ActionCard : Card
 {
-    [field: SerializeField] public float damangeAmount { get; protected set; }
-
-    [field: SerializeField] public consequenceTarget consequenceTarget { get; private set; }
-
     public override void UseCard()
     {
         base.UseCard();
         DecideDamageArea();
-        if (cardData.cardEffects != null && cardData.cardEffects.Length > 0)
+        if (cardData.cardEffects == null || cardData.cardEffects.Length == 0) return;
             EffectManager.ApplyEffects(cardData.cardEffects.ToList());
+            
+        OnCardUseReady?.Invoke(this);
     }
 
     public void DecideDamageArea()
     {
-        
-        //.Where((playerInfo info) => info.playerId != NetworkManager.Singleton.LocalClientId));
-        switch (consequenceTarget)
+
+        switch (cardData.consequenceTarget)
         {
             case consequenceTarget.LOCAL:
-                HpManager.Instance.LowerHpServer_Rpc(damangeAmount, NetworkManager.Singleton.LocalClientId);
+                HpManager.Instance.LowerHpServer_Rpc(cardData.damageAmount, NetworkManager.Singleton.LocalClientId);
                 break;
             case consequenceTarget.ALL_EX:
-                HpManager.Instance.LowerHpSpecificGroupServer_Rpc(damangeAmount, GameManager.playersDict.Values
+                HpManager.Instance.LowerHpSpecificGroupServer_Rpc(cardData.damageAmount, GameManager.playersDict.Values
                                                                                     .Select((playerInfo info) => info.playerId)
                                                                                     .ToArray()
                                                                                     .Where((ulong id) => id != NetworkManager.Singleton.LocalClientId).ToArray());
-            
                 break;
             case consequenceTarget.ALL_INC:
-                HpManager.Instance.LowerHpSpecificGroupServer_Rpc(damangeAmount, GameManager.playersDict.Values
+                HpManager.Instance.LowerHpSpecificGroupServer_Rpc(cardData.damageAmount, GameManager.playersDict.Values
                                                                                     .ToArray()
                                                                                     .Select((playerInfo info) => info.playerId)
                                                                                     .ToArray());
                 break;
             case consequenceTarget.SPECIFIC_SINGLE:
-                HpManager.Instance.LowerHpServer_Rpc(damangeAmount, AskForPlayer());
+                GameScreensManager.Instance.AskForSinglePlayer(cardData.consequenceTarget);
+                PlayerConsequenceScreenHandler.OnDoneDeciding += HandleLowerHpServerSingle;
                 break;
-            case consequenceTarget.SPECIFIC_GROUP:
-                HpManager.Instance.LowerHpSpecificGroupServer_Rpc(damangeAmount, AskForPlayerGroup(false));
-
+            default:
+                HandleRequestForSpecificGroup();
+                PlayerConsequenceScreenHandler.OnDoneDeciding += LowerHpSpecificGroupServer;
                 break;
         }
     }
-
-    /// <summary>
-    /// Creates a UI screen to ask the player which players to damage
-    /// TODO: move it somewhere else
-    /// </summary>
-    /// <param name="localExclusive">Should the local player be excluded from the damage</param>
-    /// <returns></returns>
-    private ulong[] AskForPlayerGroup(bool localExclusive = false)
+    
+    private void HandleRequestForSpecificGroup()
     {
-
+        if (cardData.numberOfAffectedPlayers > 0)
+            GameScreensManager.Instance.AskForPlayerGroup(cardData.numberOfAffectedPlayers, cardData.consequenceTarget);
+        else HpManager.Instance.HandleAffectedTagsServer_Rpc(cardData.affectedTags, cardData.damageAmount, cardData.Heals);
     }
 
-    private ulong AskForPlayer()
+    private void HandleLowerHpServerSingle(List<ulong> playerIds)
     {
+        RuntimeMsg.Info("---Single Player---", "Included Player: " + playerIds[0]);
+        HpManager.Instance.LowerHpServer_Rpc(cardData.damageAmount, playerIds[0]);
+    }
 
+    private void LowerHpSpecificGroupServer(List<ulong> playerIds)
+    {
+        for (int i = 0; i < playerIds.Count; i++)
+        {
+            RuntimeMsg.Info("---Multiple Players---", "Included Player: " + playerIds[i]);
+        }
+        HpManager.Instance.LowerHpSpecificGroupServer_Rpc(cardData.damageAmount, playerIds.ToArray());
+    }
+
+    private void OnDestroy()
+    {
+        PlayerConsequenceScreenHandler.OnDoneDeciding -= LowerHpSpecificGroupServer;
+        PlayerConsequenceScreenHandler.OnDoneDeciding -= HandleLowerHpServerSingle;
     }
 }

@@ -29,7 +29,7 @@ public class CardGenerationManager : MonoBehaviour
     {
         if (!Instance) Instance = this;
         else Destroy(this);
-        CardInteractionManager.OnCardUse += HandleCardUse;
+        Card.OnCardUseReady += HandleCardUse;
         InventoryManager.OnCardMoved += HandleCardMoved;
     }
 
@@ -91,6 +91,11 @@ public class CardGenerationManager : MonoBehaviour
 
         for (int i = 0; i < generationAmount; i++)
         {
+            if(cards[i] == null)
+            {
+                RuntimeMsg.Warning($"Skipping element {i} as it was null");
+                continue;
+            }
             //if you find another card present in the hand deck with identical info to the current (cards[i]) 
             //then skip creation for current card 
             if (playerCards.FindIndex(

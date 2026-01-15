@@ -1,6 +1,9 @@
 
+using System;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
+using UnityEditor.Rendering;
 using UnityEngine;
 
 [CustomEditor(typeof(CardScriptable))]
@@ -11,9 +14,14 @@ public class CardScriptableEditor : Editor
     private FieldInfo cardType;
     private FieldInfo damageAmount;
     private FieldInfo cardEffects;
+    private FieldInfo consequenceTarget;
+    private FieldInfo numberOfAffectedPlayers;
+    private SerializedProperty _affectedTags;
+    private FieldInfo heals;
 
     private CardScriptable current;
 
+    private bool showTags;
 
     private void OnEnable()
     {
@@ -22,15 +30,20 @@ public class CardScriptableEditor : Editor
 
         Name = GetBackingField(current, "Name");
         Desc = GetBackingField(current, "Description");
-        cardType = GetBackingField(current, "type");
+        cardType = GetBackingField(current, "Type");
         damageAmount = GetBackingField(current, "damageAmount");
         cardEffects = GetBackingField(current, "cardEffects");
+        consequenceTarget = GetBackingField(current, "consequenceTarget");
+        numberOfAffectedPlayers = GetBackingField(current, "numberOfAffectedPlayers");
+        heals = GetBackingField(current, "Heals");
+        _affectedTags = serializedObject.FindProperty("affectedTags");
     }
 
 
     public override void OnInspectorGUI()
     {
         EditorGUI.BeginChangeCheck();
+        serializedObject.Update();
         Name.SetValue(current, EditorGUILayout.TextField("Name", (string)Name.GetValue(current)));
         EditorGUILayout.LabelField("Description");
         Desc.SetValue(current, EditorGUILayout.TextArea((string)Desc.GetValue(current), new GUILayoutOption[]
@@ -39,16 +52,50 @@ public class CardScriptableEditor : Editor
         }));
 
         cardType.SetValue(current, (int)(cardTypeEnum)EditorGUILayout.EnumPopup("Card Type", (cardTypeEnum)cardType.GetValue(current)));
-        
+
         if ((cardTypeEnum)cardType.GetValue(current) != cardTypeEnum.CHARACTER)
         {
-            damageAmount.SetValue(current, EditorGUILayout.Slider(1, HpManager.maxHp, (float)damageAmount.GetValue(current)));
+            heals.SetValue(current, (bool)EditorGUILayout.Toggle("Heals", (bool)heals.GetValue(current)));
+            
+            string damageLable = ((bool)heals.GetValue(current)) ? "Healing amount" : "Damage";
+            
+            damageAmount.SetValue(current, EditorGUILayout.Slider(damageLable, (float)damageAmount.GetValue(current), 0, HpManager.maxHp));
+            consequenceTarget.SetValue(current, (consequenceTarget)EditorGUILayout.EnumPopup("Target", (consequenceTarget)consequenceTarget.GetValue(current)));
             //do card effects here
         }
 
+        if ((consequenceTarget)consequenceTarget.GetValue(current) == global::consequenceTarget.SPECIFIC_GROUP_INC ||
+            ((consequenceTarget)consequenceTarget.GetValue(current) == global::consequenceTarget.SPECIFIC_GROUP_EX))
+                numberOfAffectedPlayers.SetValue(current, EditorGUILayout.IntField("Number Of Affected Players", (int)numberOfAffectedPlayers.GetValue(current)));
+
+        if ((int)numberOfAffectedPlayers.GetValue(current) == -1) {
+            EditorGUI.indentLevel = 1;
+            showTags = EditorGUILayout.BeginFoldoutHeaderGroup(showTags, "Card's Affected Tags");
+
+            if (showTags)
+            {
+                _affectedTags.arraySize = EditorGUILayout.IntField(_affectedTags.arraySize);
+                HandleArray(_affectedTags.arraySize);
+            }
+            
+            EditorGUI.indentLevel = 0;
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+        //EditorGUILayout.PropertyField(serializedObject.FindProperty("affectedTags"));//affectedTags.SetValue(current, (playerTagsEnum)EditorGUILayout.Foldout("Affected tags", (playerTagsEnum)affectedTags.GetValue(current)));
 
 
         if (EditorGUI.EndChangeCheck()) serializedObject.ApplyModifiedProperties();
+    }
+
+    private void HandleArray(int arrSize)
+    {
+        for (int i = 0; i < arrSize; i++)
+        {
+            var affectedTagsElem = _affectedTags.GetArrayElementAtIndex(i);
+            EditorGUI.indentLevel = 2;
+            EditorGUILayout.PropertyField(affectedTagsElem, new GUIContent("Affected Tag " + i));
+        }
+
     }
 
     //nasty nasty reflection!!

@@ -16,13 +16,9 @@ public class CardInfoScreenInitializer : ScreenInitializer<Card>
 
     private Card card;
 
-    private void Awake()
-    {
-        contentObjectEffectsScrollView = GameObject.FindWithTag(effectsLabel);
-    }
-
     public override void Initialize(Card card)
     {
+        contentObjectEffectsScrollView = GameObject.FindWithTag(effectsLabel);
         GetComponentInChildren<CardGraphics>().SetUpInfoCard(card);
         this.card = card;
         EffectsScrollView();

@@ -24,5 +24,9 @@ public enum consequenceTarget
     /// <summary>
     /// A specific group of players are affected
     /// </summary>
-    SPECIFIC_GROUP
+    SPECIFIC_GROUP_EX,
+    /// <summary>
+    /// A specific group of players are affected including local player
+    /// </summary>
+    SPECIFIC_GROUP_INC
 }

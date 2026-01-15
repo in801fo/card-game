@@ -846,8 +846,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1658021748}
-  - component: {fileID: 1658021749}
   - component: {fileID: 1658021750}
+  - component: {fileID: 1658021749}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -882,6 +882,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 146dab29d155fa949b315c54dad300ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
+  ShowTopMostFoldoutHeaderGroup: 1
   debugUIManager: {fileID: 4079937948980276031, guid: cfca462673c51e64f80982c9924b4baf, type: 3}
   inventoryManager: {fileID: 1210240002159481530, guid: df7bea53eaf5af4438f9a5104187c15e, type: 3}
   screensManager: {fileID: 423827317838303333, guid: 0f114fe6256a7d44f9f9bbaf9dde25dd, type: 3}
@@ -905,9 +906,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
   GlobalObjectIdHash: 2179887656
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 0
+  SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!1 &1671196501
 GameObject:
   m_ObjectHideFlags: 0

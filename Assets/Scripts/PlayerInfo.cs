@@ -12,6 +12,7 @@ public struct playerInfo : INetworkSerializable, IEquatable<playerInfo>
     public FixedString64Bytes Name;
     public pronouns Pronouns;
     public ulong playerId;
+    public ushort playerTagsMask;
 
     public bool Equals(playerInfo other)
     {
@@ -23,6 +24,7 @@ public struct playerInfo : INetworkSerializable, IEquatable<playerInfo>
         serializer.SerializeValue(ref Name);
         serializer.SerializeValue(ref Pronouns);
         serializer.SerializeValue(ref playerId);
+        serializer.SerializeValue(ref playerTagsMask);
     }
 
     //TODO: add more info that needs to be carried out into the game from other screens, such as:

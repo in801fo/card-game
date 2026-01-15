@@ -40,6 +40,7 @@ public class DrawDebugUI : MonoBehaviour
 
     private void Awake(){
         InitializeUI();
+        Application.logMessageReceived += HandleUnityLog;
     }
     
 
@@ -54,14 +55,33 @@ public class DrawDebugUI : MonoBehaviour
     }
 
 
-    private void InitializeUI(){
+    private void InitializeUI() {
         CreateDebugCanvas();
         CreateDebugScrollView();
         CreateSaveLoadInterface();
-        if(errorConsole == null) CreateErrorConsole();
+        if (errorConsole == null) CreateErrorConsole();
 
         fieldDebugCollection.SetActive(false);
         errorConsole.SetActive(false);
+    }
+    
+    private void HandleUnityLog(string logString, string stackTrace, LogType type)
+    {
+        switch (type)
+        {
+            case LogType.Error:
+                RuntimeMsg.Error(logString, stackTrace);
+                break;
+            case LogType.Warning:
+                RuntimeMsg.Warning(logString, stackTrace);
+                break;
+            case LogType.Log:
+                RuntimeMsg.Info(logString, stackTrace);
+                break;
+            default:
+                RuntimeMsg.Error(logString, stackTrace);
+                break;
+        }
     }
 
     private void CreateDebugCanvas(){
@@ -211,9 +231,15 @@ public class DrawDebugUI : MonoBehaviour
         }
     }
 
-    public void RefreshUI(){
+    public void RefreshUI()
+    {
         DestroyOutdatedUI();
         GenerateDebugUIForValue(mainSerializingObject, true);
+    }
+
+    private void OnDestroy()
+    {
+        Application.logMessageReceived -= HandleUnityLog;
     }
 
 }

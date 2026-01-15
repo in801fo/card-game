@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.Netcode;
+using Unity.VisualScripting;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -19,6 +20,7 @@ public class GameManager : NetworkBehaviour
     [SerializeField] private NetworkManager networkManager;
 
     public static Dictionary<ulong, playerInfo> playersDict { get; private set; } = new Dictionary<ulong, playerInfo>();
+    public static NetworkVariable<int> playerCount { get; private set; } = new NetworkVariable<int>(0);
     private static List<GameObject> managers = new List<GameObject>();
 
     public static Action OnDoneGenerating;
@@ -29,7 +31,11 @@ public class GameManager : NetworkBehaviour
 
     private const string namePrefixWhenNameEmpty = "CSN"; //Coglione Senza Nome
 
-    //just giving you an idea: synchronize the player's list with network variables
+    /// <summary>
+    /// This network list is used to then create the dictionary on the single clients,
+    /// the playersNetList si synchronized across all clients, the dictionary is not.
+    /// The dictionary only exists as an easier way to save player refs
+    /// </summary>
     private NetworkList<playerInfo> playersNetList = new NetworkList<playerInfo>();
 
     private void Awake()
@@ -59,8 +65,12 @@ public class GameManager : NetworkBehaviour
         SignalConnectionToServer_Rpc(string.Empty, (int)pronouns.HEHIM, NetworkManager.LocalClientId);
     }
 
+    /// <summary>
+    /// Copies all elements from <c>playersNetList</c> to <c>playerDict</c>
+    /// </summary>
     private void InitializePlayersDictionary()
     {
+
         for (int i = 0; i < playersNetList.Count; i++)
         {
             playerInfo currentPlayer = playersNetList[i];
@@ -69,13 +79,20 @@ public class GameManager : NetworkBehaviour
         }
     }
 
+    [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
+    private void UpdatePlayerDictionaryClient_Rpc()
+    {
+        playersDict.Clear();
+        InitializePlayersDictionary();
+    }
+
     private void HandleGameStart()
     {
-        HandleGameStartClientRpc();
+        HandleGameStartClient_Rpc();
     }
 
     [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
-    private void HandleGameStartClientRpc()
+    private void HandleGameStartClient_Rpc()
     {
         RuntimeMsg.Info("Game Started!");
         InitializePlayersDictionary();
@@ -107,8 +124,8 @@ public class GameManager : NetworkBehaviour
         if (count == actualInheriting)
             OnDoneGenerating?.Invoke();
 
-        //DontDestroyOnLoad(managers[managers.Count - 1]);
     }
+
     #region Managers Generation Handlers
     private void HandleScreenManager()
     {
@@ -125,7 +142,7 @@ public class GameManager : NetworkBehaviour
             managers[managers.Count - 1].GetComponent<NetworkBehaviour>().NetworkObject.Spawn();
         }
         managers.Add(Instantiate(healthUIManager.gameObject));
-//        managers[managers.Count - 1].transform.SetParent(healthHandling.transform);
+        //        managers[managers.Count - 1].transform.SetParent(healthHandling.transform);
     }
 
     private void HandleCardGeneration()
@@ -207,9 +224,38 @@ public class GameManager : NetworkBehaviour
         }
 
         playersDict.Add(clientId, player);
+        playerCount.Value = playersDict.Count;
 
         return true;
     }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void HandleUpdateTagsServer_Rpc(ushort newMask, ulong playerId)
+    {
+        int indexInList = playersNetList.IndexOf(playersDict[playerId]);
+
+        //dont know why, but is the only way to "update" a value in a networkList
+        playersNetList.RemoveAt(indexInList);
+        playersNetList.Insert(indexInList, new playerInfo()
+        {
+            Name = playersDict[playerId].Name,
+            Pronouns = playersDict[playerId].Pronouns,
+            playerTagsMask = newMask,
+            playerId = playersDict[playerId].playerId
+        });
+
+
+        UpdatePlayerDictionaryClient_Rpc();
+    }
+    
+    //debug
+    
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.UpArrow)) 
+            HandleUpdateTagsServer_Rpc(1, OwnerClientId);
+    }
+    
 
     //TODO: once the host decides that the amount of player is sufficient make it so it can press a button and the game starts
 

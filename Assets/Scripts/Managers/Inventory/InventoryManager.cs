@@ -23,7 +23,7 @@ public class InventoryManager : CoordinatedMonoBehaviour
 
     protected override void Beginning()
     {
-        CardInteractionManager.OnCardUse += HandleCardUse;
+        Card.OnCardUseReady += HandleCardUse;
     }
 
     public void AddCard(CardScriptable card, bool signal = true)
@@ -105,7 +105,7 @@ public class InventoryManager : CoordinatedMonoBehaviour
 
     private void OnDestroy()
     {
-        CardInteractionManager.OnCardUse -= HandleCardUse;
+        Card.OnCardUseReady -= HandleCardUse;
         GameManager.OnDoneGenerating -= Beginning;
     }
 }

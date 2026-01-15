@@ -39,7 +39,7 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
         defaultCameraDistance += Camera.main.nearClipPlane + cardZDistance;
         CardInteractionManager.OnCardHold += HandleCardHold;
         CardInteractionManager.OnCardRelease += HandleCardRelease;
-        CardInteractionManager.OnCardUse += HandleCardUse;
+        Card.OnCardUseReady += HandleCardUse;
     }
 
     

@@ -43,19 +43,6 @@ public class HpManager : NetworkBehaviour
 
     }
 
-    /*private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.DownArrow) && !NetworkManager.Singleton.IsServer){
-            RuntimeMsg.Info("Lower: Executing On Client");
-            LowerHpServer_Rpc(10, NetworkManager.LocalClientId);
-        }
-        if (Input.GetKeyDown(KeyCode.UpArrow) && !NetworkManager.Singleton.IsServer)
-        {
-            RuntimeMsg.Info("Increase: Executing On Client");
-            IncrementHpServer_Rpc(10, NetworkManager.LocalClientId);
-        }
-    }*/
-
     /// <summary>
     /// Ask the server to reduce the HPs of the player specified by the id
     /// </summary>
@@ -131,7 +118,7 @@ public class HpManager : NetworkBehaviour
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     public void IncrementHpSpecificGroupServer_Rpc(float amount, ulong[] playerIds)
     {
-        for(int i = 0; i < playerIds.Length; i++)
+        for (int i = 0; i < playerIds.Length; i++)
         {
             ulong senderClientId = playerIds[i];
             RuntimeMsg.Info($"Received Request to increment HP for {senderClientId}");
@@ -157,7 +144,59 @@ public class HpManager : NetworkBehaviour
             //once capping is done broadcast to all clients the amount and the player which received the damage
             OnHealthChangeClient_Rpc(senderClientId, amount);
         }
-        
+
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void HandleAffectedTagsServer_Rpc(playerTagsEnum[] affectedTags, float amount, bool cardHeals = false)
+    {
+        List<playerInfo> players = GameManager.playersDict.Values.ToList();
+        for (int i = 0; i < affectedTags.Length; i++)
+        {
+            foreach (playerInfo player in players)
+            {
+                List<playerTagsEnum> playerTagsEnums = ExtractPlayerTagsFromMask(player.playerTagsMask, player.playerId);
+                if (playerTagsEnums.Contains(affectedTags[i])) HandleDamageOrHealServer(amount, player.playerId, cardHeals);
+            }
+        }
+    }
+
+    //TODO: maybe move somewhere else
+    /// <summary>
+    /// Converts the provided mask into a list of playerTagsEnum
+    /// </summary>
+    /// <param name="mask">A ushort (16 bit integer) representing the binary string of the playerTagsEnum of the 
+    /// currentPlayer. In the playerTagsEnum we have each entry assigned an integer value. Each value is a power of 2, so to be able to represent
+    /// a string of playerTagsEnum values as a string of binary digits. 0000000000000011 = 3, the single digits, the ones
+    /// set to 1 at least, represent a tag, in this case the string is saying that the player has 2 tags: <c>HAS_MERIDIONE</c> and <c>HAS_JUST_INFLICTED_DAMAGE.</c></param>
+    /// <returns></returns>
+    private List<playerTagsEnum> ExtractPlayerTagsFromMask(ushort mask, ulong playerId)
+    {
+        List<playerTagsEnum> playerTags = new List<playerTagsEnum>();
+        //tmp
+        string tmp = "";
+        for (int i = 0; i < 16; i++)
+        {
+            /*
+                Basically just moving the 1 across all the digits of mask (as a binary string)
+                and checking if at the i-th position there is a 1 (doinf the & (AND)).
+            */
+            if ((mask & (1 << i)) != 0) playerTags.Add((playerTagsEnum)(1 << i));
+            if((mask & (1 << i)) != 0) tmp += $" {(playerTagsEnum)(1 << i)}";
+        }
+
+        RuntimeMsg.Info($"Player {playerId}'s tags", tmp);
+
+        return playerTags;
+    }
+
+    ///<summary> Decides wether the damage inflicted is actually an amount of hps to give to the specified player, 
+    /// or just a damage amount, all based on the sign of the provided damage
+    /// </summary>     
+    private void HandleDamageOrHealServer(float damage, ulong affected, bool heals)
+    {
+        if (heals) IncrementHpServer_Rpc(damage, affected);
+        else LowerHpServer_Rpc(damage, affected);
     }
 
     /// <summary>
@@ -181,4 +220,6 @@ public class HpManager : NetworkBehaviour
 
         return true;
     }
+
+    
 }
