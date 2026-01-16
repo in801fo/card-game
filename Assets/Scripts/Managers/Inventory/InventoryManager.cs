@@ -40,8 +40,13 @@ public class InventoryManager : CoordinatedMonoBehaviour
 
     protected override void ReadyUpdate()
     {
-        if (Input.GetKeyDown(KeyCode.Return)) 
-            AddCard((CardScriptable)ScriptableObject.CreateInstance(nameof(CardScriptable)));
+        if (Input.GetKeyDown(KeyCode.Return))
+        {
+            CardScriptable scriptable = (CardScriptable)ScriptableObject.CreateInstance(nameof(CardScriptable));
+            scriptable.Type = cardTypeEnum.CHARACTER;
+            scriptable.Name = "Info";
+            AddCard(scriptable);
+        }
     }
 
     /// <summary>

@@ -42,8 +42,6 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
         Card.OnCardUseReady += HandleCardUse;
     }
 
-    
-
     protected override void Beginning()
     {
         GenerateReferenceCard();

@@ -18,25 +18,28 @@ public class GameManager : NetworkBehaviour
     [SerializeField] private HpUIManager healthUIManager;
     [SerializeField] private NetworkUIHandler networkUIHandler;
     [SerializeField] private NetworkManager networkManager;
+    [SerializeField] private PlayerTagAssigner playerTagAssigner;
 
     public static Dictionary<ulong, playerInfo> playersDict { get; private set; } = new Dictionary<ulong, playerInfo>();
     public static NetworkVariable<int> playerCount { get; private set; } = new NetworkVariable<int>(0);
-    private static List<GameObject> managers = new List<GameObject>();
-
-    public static Action OnDoneGenerating;
-
-    private static int count;
-
-    private static int actualInheriting;
-
-    private const string namePrefixWhenNameEmpty = "CSN"; //Coglione Senza Nome
-
     /// <summary>
     /// This network list is used to then create the dictionary on the single clients,
     /// the playersNetList si synchronized across all clients, the dictionary is not.
     /// The dictionary only exists as an easier way to save player refs
     /// </summary>
-    private NetworkList<playerInfo> playersNetList = new NetworkList<playerInfo>();
+    private static NetworkList<playerInfo> playersNetList = new NetworkList<playerInfo>();
+
+    private static List<GameObject> managers = new List<GameObject>();
+
+    public static Action OnDoneGenerating;
+
+    private static int coordinatedMonoBehaviourCount;
+
+    private static int actualInheriting;
+
+    private const string namePrefixWhenNameEmpty = "CSN"; //Coglione Senza Nome
+
+    public static GameManager Instance { get; private set; }
 
     private void Awake()
     {
@@ -46,10 +49,15 @@ public class GameManager : NetworkBehaviour
         managers.Add(Instantiate(networkManager.gameObject));
         managers.Add(Instantiate(networkUIHandler.gameObject));
 
+        managers.Add(Instantiate(playerTagAssigner.gameObject));
+
         NetworkManager.Singleton.OnClientConnectedCallback += HandleOnLocalClientConnected;
 
         //only happens on the server
         NetworkUIHandler.OnGameStart += HandleGameStart;
+        
+        if (Instance == null) Instance = this;
+        else Destroy(this);
     }
 
     /// <summary>
@@ -121,7 +129,7 @@ public class GameManager : NetworkBehaviour
 
         //if the number of CoordinatedMonoBehaviours is equal to the actual which inherited that means that all of them have
         //completed their initialization 
-        if (count == actualInheriting)
+        if (coordinatedMonoBehaviourCount == actualInheriting)
             OnDoneGenerating?.Invoke();
 
     }
@@ -183,7 +191,7 @@ public class GameManager : NetworkBehaviour
     }
 
     #endregion
-    public static void ValidateInitialization() => count++;
+    public static void ValidateInitialization() => coordinatedMonoBehaviourCount++;
 
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -229,8 +237,14 @@ public class GameManager : NetworkBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Handles the update for the specified client of their tags
+    /// </summary>
+    /// <param name="newMask"></param>
+    /// <param name="playerId"></param>
+
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void HandleUpdateTagsServer_Rpc(ushort newMask, ulong playerId)
+    public void HandleSetTagsServer_Rpc(ushort newMask, ulong playerId)
     {
         int indexInList = playersNetList.IndexOf(playersDict[playerId]);
 
@@ -247,13 +261,49 @@ public class GameManager : NetworkBehaviour
 
         UpdatePlayerDictionaryClient_Rpc();
     }
-    
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void HandleAddTagsServer_Rpc(ushort tag, ulong playerId)
+    {
+        int indexInList = playersNetList.IndexOf(playersDict[playerId]);
+
+        //dont know why, but is the only way to "update" a value in a networkList
+        ushort oldMask = playersNetList[indexInList].playerTagsMask;
+
+        //if it already has the passed tag, then there is no need to add it as that would also mess up the tags
+        if (TagHandler.HasTag(oldMask, (playerTagsEnum)tag)) { RuntimeMsg.Info("Avoided tag mess!"); return; }
+
+        playersNetList.RemoveAt(indexInList);
+        playersNetList.Insert(indexInList, new playerInfo()
+        {
+            Name = playersDict[playerId].Name,
+            Pronouns = playersDict[playerId].Pronouns,
+            playerTagsMask = (ushort)(oldMask + tag),
+            playerId = playersDict[playerId].playerId
+        });
+
+
+        UpdatePlayerDictionaryClient_Rpc();
+    }
+
     //debug
-    
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.UpArrow)) 
-            HandleUpdateTagsServer_Rpc(1, OwnerClientId);
+        if (Input.GetKeyDown(KeyCode.UpArrow))
+            HandleAddTagsServer_Rpc(1, OwnerClientId);
+        if (Input.GetKeyDown(KeyCode.S))
+            PrintLocalPlayerTags();
+    }
+    
+    private void PrintLocalPlayerTags()
+    {
+        List<playerTagsEnum> tags = TagHandler.ExtractPlayerTagsFromMask(playersDict[NetworkManager.LocalClientId].playerTagsMask);
+        string tagsString = string.Empty;
+        for (int i = 0; i < tags.Count; i++)
+        {
+            tagsString += tags[i].ToString() + "\n";
+        }
+        RuntimeMsg.Info("----Local Player Tags----", tagsString);
     }
     
 
