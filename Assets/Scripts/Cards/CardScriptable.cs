@@ -6,10 +6,10 @@ using UnityEngine;
 [CanEditMultipleObjects]
 public class CardScriptable : ScriptableObject
 {
-    [field: SerializeField] public string Name { get; set; }
+    [field: SerializeField] public string Name { get; private set; }
     [field: SerializeField] public Sprite Sprite { get; private set; }
     [field: SerializeField] public string Description { get; private set; }
-    [field: SerializeField] public cardTypeEnum Type { get; set; }
+    [field: SerializeField] public cardTypeEnum Type { get; private set; }
     [field: SerializeField] public consequenceTarget consequenceTarget { get; private set; }
     //this makes it so that a minimum number of players must play
     [Tooltip("If set to -1, one can choose a tag with which to discriminate players and decide who will receive the damage")]

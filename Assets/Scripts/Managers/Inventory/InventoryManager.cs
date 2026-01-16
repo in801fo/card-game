@@ -43,8 +43,9 @@ public class InventoryManager : CoordinatedMonoBehaviour
         if (Input.GetKeyDown(KeyCode.Return))
         {
             CardScriptable scriptable = (CardScriptable)ScriptableObject.CreateInstance(nameof(CardScriptable));
-            scriptable.Type = cardTypeEnum.CHARACTER;
-            scriptable.Name = "Info";
+            //to make this work you ought'ta make public the set for the following fields in the CardScriptable class
+            /*scriptable.Type = cardTypeEnum.CHARACTER;
+            scriptable.Name = "Info";*/
             AddCard(scriptable);
         }
     }
