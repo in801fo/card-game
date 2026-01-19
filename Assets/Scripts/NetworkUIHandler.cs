@@ -22,9 +22,10 @@ public class NetworkUIHandler : MonoBehaviour
 
     private void HandleStartGame()
     {
-        if (GameManager.playersDict.Count <= 2)
+        if (GameManager.playersDict.Count < 2)
         {
             RuntimeMsg.Error("Unable to start game", "Unable to start the game as the number of players was inferior to 2!");
+            //TODO: uncomment when releasing/demoing
             //return;
         }
 

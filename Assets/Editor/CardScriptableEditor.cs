@@ -6,7 +6,8 @@ using UnityEditor;
 using UnityEditor.Rendering;
 using UnityEngine;
 
-[CustomEditor(typeof(CardScriptable))]
+//TODO figlio di puttana i valori si azzerano non appena unity si riavvia, fixa urgentemente
+[CustomEditor(typeof(CardScriptable)), CanEditMultipleObjects]
 public class CardScriptableEditor : Editor
 {
     private FieldInfo Name;
@@ -19,23 +20,23 @@ public class CardScriptableEditor : Editor
     private SerializedProperty _affectedTags;
     private FieldInfo heals;
 
-    private CardScriptable current;
+    //private CardScriptable target;
 
     private bool showTags;
 
     private void OnEnable()
     {
 
-        current = target as CardScriptable;
+        //target = target as CardScriptable;
 
-        Name = GetBackingField(current, "Name");
-        Desc = GetBackingField(current, "Description");
-        cardType = GetBackingField(current, "Type");
-        damageAmount = GetBackingField(current, "damageAmount");
-        cardEffects = GetBackingField(current, "cardEffects");
-        consequenceTarget = GetBackingField(current, "consequenceTarget");
-        numberOfAffectedPlayers = GetBackingField(current, "numberOfAffectedPlayers");
-        heals = GetBackingField(current, "Heals");
+        Name = GetBackingField(target, "Name");
+        Desc = GetBackingField(target, "Description");
+        cardType = GetBackingField(target, "Type");
+        damageAmount = GetBackingField(target, "damageAmount");
+        cardEffects = GetBackingField(target, "cardEffects");
+        consequenceTarget = GetBackingField(target, "consequenceTarget");
+        numberOfAffectedPlayers = GetBackingField(target, "numberOfAffectedPlayers");
+        heals = GetBackingField(target, "Heals");
         _affectedTags = serializedObject.FindProperty("affectedTags");
     }
 
@@ -44,31 +45,32 @@ public class CardScriptableEditor : Editor
     {
         EditorGUI.BeginChangeCheck();
         serializedObject.Update();
-        Name.SetValue(current, EditorGUILayout.TextField("Name", (string)Name.GetValue(current)));
+        Name.SetValue(target, EditorGUILayout.TextField("Name", (string)Name.GetValue(target)));
         EditorGUILayout.LabelField("Description");
-        Desc.SetValue(current, EditorGUILayout.TextArea((string)Desc.GetValue(current), new GUILayoutOption[]
+        Desc.SetValue(target, EditorGUILayout.TextArea((string)Desc.GetValue(target), new GUILayoutOption[]
         {
             GUILayout.Height(25)
         }));
 
-        cardType.SetValue(current, (int)(cardTypeEnum)EditorGUILayout.EnumPopup("Card Type", (cardTypeEnum)cardType.GetValue(current)));
+        cardType.SetValue(target, (int)(cardTypeEnum)EditorGUILayout.EnumPopup("Card Type", (cardTypeEnum)cardType.GetValue(target)));
 
-        if ((cardTypeEnum)cardType.GetValue(current) != cardTypeEnum.CHARACTER)
+        if ((cardTypeEnum)cardType.GetValue(target) != cardTypeEnum.CHARACTER)
         {
-            heals.SetValue(current, (bool)EditorGUILayout.Toggle("Heals", (bool)heals.GetValue(current)));
+            heals.SetValue(target, (bool)EditorGUILayout.Toggle("Heals", (bool)heals.GetValue(target)));
             
-            string damageLable = ((bool)heals.GetValue(current)) ? "Healing amount" : "Damage";
+            string damageLable = ((bool)heals.GetValue(target)) ? "Healing amount" : "Damage";
             
-            damageAmount.SetValue(current, EditorGUILayout.Slider(damageLable, (float)damageAmount.GetValue(current), 0, HpManager.maxHp));
-            consequenceTarget.SetValue(current, (consequenceTarget)EditorGUILayout.EnumPopup("Target", (consequenceTarget)consequenceTarget.GetValue(current)));
+            damageAmount.SetValue(target, EditorGUILayout.Slider(damageLable, (float)damageAmount.GetValue(target), 0, HpManager.maxHp));
+            consequenceTarget.SetValue(target, (consequenceTarget)EditorGUILayout.EnumPopup("Target", (consequenceTarget)consequenceTarget.GetValue(target)));
             //do card effects here
         }
 
-        if ((consequenceTarget)consequenceTarget.GetValue(current) == global::consequenceTarget.SPECIFIC_GROUP_INC ||
-            ((consequenceTarget)consequenceTarget.GetValue(current) == global::consequenceTarget.SPECIFIC_GROUP_EX))
-                numberOfAffectedPlayers.SetValue(current, EditorGUILayout.IntField("Number Of Affected Players", (int)numberOfAffectedPlayers.GetValue(current)));
+        if ((consequenceTarget)consequenceTarget.GetValue(target) == global::consequenceTarget.SPECIFIC_GROUP_INC ||
+            ((consequenceTarget)consequenceTarget.GetValue(target) == global::consequenceTarget.SPECIFIC_GROUP_EX))
+                numberOfAffectedPlayers.SetValue(target, EditorGUILayout.IntField("Number Of Affected Players", (int)numberOfAffectedPlayers.GetValue(target)));
 
-        if ((int)numberOfAffectedPlayers.GetValue(current) == -1) {
+        if ((int)numberOfAffectedPlayers.GetValue(target) == -1)
+        {
             EditorGUI.indentLevel = 1;
             showTags = EditorGUILayout.BeginFoldoutHeaderGroup(showTags, "Card's Affected Tags");
 
@@ -77,11 +79,13 @@ public class CardScriptableEditor : Editor
                 _affectedTags.arraySize = EditorGUILayout.IntField(_affectedTags.arraySize);
                 HandleArray(_affectedTags.arraySize);
             }
-            
+
             EditorGUI.indentLevel = 0;
             EditorGUILayout.EndFoldoutHeaderGroup();
         }
-        //EditorGUILayout.PropertyField(serializedObject.FindProperty("affectedTags"));//affectedTags.SetValue(current, (playerTagsEnum)EditorGUILayout.Foldout("Affected tags", (playerTagsEnum)affectedTags.GetValue(current)));
+
+        EditorUtility.SetDirty(target);
+        //EditorGUILayout.PropertyField(serializedObject.FindProperty("affectedTags"));//affectedTags.SetValue(target, (playerTagsEnum)EditorGUILayout.Foldout("Affected tags", (playerTagsEnum)affectedTags.GetValue(target)));
 
 
         if (EditorGUI.EndChangeCheck()) serializedObject.ApplyModifiedProperties();

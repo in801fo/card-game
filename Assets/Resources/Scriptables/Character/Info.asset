@@ -15,7 +15,11 @@ MonoBehaviour:
   <Name>k__BackingField: Info
   <Sprite>k__BackingField: {fileID: 0}
   <Description>k__BackingField: sTO CAZZOOO
-  <type>k__BackingField: 2
+  <Type>k__BackingField: 1
+  <consequenceTarget>k__BackingField: 0
+  <numberOfAffectedPlayers>k__BackingField: 0
+  <Heals>k__BackingField: 0
   <damageAmount>k__BackingField: 1
   <cardEffects>k__BackingField: 0000000001000000
   <maxCardUsages>k__BackingField: 0
+  affectedTags: 

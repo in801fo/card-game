@@ -96,8 +96,12 @@ public class CardGraphics : MonoBehaviour
     public void SetUpInfoCard(Card card)
     {
         SetUpGameCard(CardGenerationManager.Instance.GetCardFrontIndex(card.cardData.Type), card);
+        
         descBox.SetText(card.cardData.Description);
-        damageBox.SetText("Damage: " + card.cardData.damageAmount);
+
+        if (card.cardData.Type != cardTypeEnum.CHARACTER)
+            damageBox.SetText("Damage: " + card.cardData.damageAmount);
+        else damageBox.SetText("Character cards don't inflict any damage");
         isInfoCard = true;
     }
 

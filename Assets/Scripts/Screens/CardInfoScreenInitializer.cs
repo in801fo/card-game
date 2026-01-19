@@ -41,7 +41,8 @@ public class CardInfoScreenInitializer : ScreenInitializer<Card>
             //I know I could simplify this but for readability I'll leave it like this
             if (card.cardData.cardEffects.Contains(effectEntries[i].representingEffect))
                 effectEntries[i].gameObject.SetActive(true);
-            else effectEntries[i].gameObject.SetActive(false);
+            else 
+                effectEntries[i].gameObject.SetActive(false);
         }
     }
 
@@ -51,13 +52,12 @@ public class CardInfoScreenInitializer : ScreenInitializer<Card>
         Array effects = Enum.GetValues(typeof(effectsEnum));
         int numberOfEffects = effects.Length;
 
-
         for (int i = 0; i < numberOfEffects; i++)
         {
             effectsEnum value = (effectsEnum)effects.GetValue(i);
             InitializeEffectEntry(
-                    value,
-                    card.cardData.cardEffects.Contains(value)
+                value,
+                card.cardData.cardEffects.Contains(value)
             );
         }
 

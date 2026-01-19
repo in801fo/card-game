@@ -267,12 +267,12 @@ public class GameManager : NetworkBehaviour
     {
         int indexInList = playersNetList.IndexOf(playersDict[playerId]);
 
-        //dont know why, but is the only way to "update" a value in a networkList
         ushort oldMask = playersNetList[indexInList].playerTagsMask;
 
         //if it already has the passed tag, then there is no need to add it as that would also mess up the tags
         if (TagHandler.HasTag(oldMask, (playerTagsEnum)tag)) { RuntimeMsg.Info("Avoided tag mess!"); return; }
 
+        //dont know why, but is the only way to "update" a value in a networkList
         playersNetList.RemoveAt(indexInList);
         playersNetList.Insert(indexInList, new playerInfo()
         {

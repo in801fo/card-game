@@ -1,9 +1,6 @@
-using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "NewCard", menuName = "Create New Card")]
-[CanEditMultipleObjects]
 public class CardScriptable : ScriptableObject
 {
     [field: SerializeField] public string Name { get; private set; }

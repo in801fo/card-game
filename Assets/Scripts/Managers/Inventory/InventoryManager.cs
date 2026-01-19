@@ -1,18 +1,27 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Unity.VisualScripting;
+using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
+using UnityEngine.XR;
 
 public class InventoryManager : CoordinatedMonoBehaviour
 {
-    [SerializeField] private List<CardScriptable> handDeck = new List<CardScriptable>();
+    [SerializeField] public List<CardScriptable> handDeck { get; private set;} = new List<CardScriptable>();
 
     private List<CardScriptable> sideDeck = new List<CardScriptable>();
 
     public static Action<CardScriptable> OnCardAddedToHandDeck;
+    public static Action<List<CardScriptable>> OnGroupCardAddedToHandDeck;
     public static Action<CardScriptable, int> OnCardMoved;
 
     public static InventoryManager Instance;
     public Action OnZeroCards;
+
+    private CardScriptable[] allCardScriptables;
 
     protected override void Awake()
     {
@@ -24,6 +33,8 @@ public class InventoryManager : CoordinatedMonoBehaviour
     protected override void Beginning()
     {
         Card.OnCardUseReady += HandleCardUse;
+        //RuntimeMsg.Info(Directory.Exists("D:\\Github\\card-game\\Assets\\Scriptables\\Cards\\Character").ToString());
+        allCardScriptables = Resources.LoadAll<CardScriptable>("Scriptables");
     }
 
     public void AddCard(CardScriptable card, bool signal = true)
@@ -42,12 +53,31 @@ public class InventoryManager : CoordinatedMonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Return))
         {
-            CardScriptable scriptable = (CardScriptable)ScriptableObject.CreateInstance(nameof(CardScriptable));
-            //to make this work you ought'ta make public the set for the following fields in the CardScriptable class
-            /*scriptable.Type = cardTypeEnum.CHARACTER;
-            scriptable.Name = "Info";*/
-            AddCard(scriptable);
+            LoadAllCardsInInventory();
         }
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            RemoveAllCards();
+        }
+    }
+
+    private void RemoveAllCards()
+    {
+        for (int i = 0; i < handDeck.Count; i++)
+        {
+            RemoveCard(handDeck[i]);
+        }
+    }
+    
+    private void LoadAllCardsInInventory()
+    {
+        for (int i = 0; i < allCardScriptables.Length; i++)
+        {
+            AddCard(allCardScriptables[i], false);
+        }
+
+        OnGroupCardAddedToHandDeck.Invoke(allCardScriptables.ToList());
+
     }
 
     /// <summary>
