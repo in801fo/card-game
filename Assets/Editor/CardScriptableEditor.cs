@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Codice.Client.Common;
 using UnityEditor;
 using UnityEditor.Rendering;
 using UnityEngine;
@@ -19,6 +20,8 @@ public class CardScriptableEditor : Editor
     private FieldInfo numberOfAffectedPlayers;
     private SerializedProperty _affectedTags;
     private FieldInfo heals;
+    private FieldInfo hasSoundEffect;
+    private FieldInfo onUseSoundEffect;
 
     //private CardScriptable target;
 
@@ -38,6 +41,8 @@ public class CardScriptableEditor : Editor
         numberOfAffectedPlayers = GetBackingField(target, "numberOfAffectedPlayers");
         heals = GetBackingField(target, "Heals");
         _affectedTags = serializedObject.FindProperty("affectedTags");
+        hasSoundEffect = GetBackingField(target, "hasSoundEffect");
+        onUseSoundEffect = GetBackingField(target, "onUseSoundEffect");
     }
 
 
@@ -45,29 +50,32 @@ public class CardScriptableEditor : Editor
     {
         EditorGUI.BeginChangeCheck();
         serializedObject.Update();
-        Name.SetValue(target, EditorGUILayout.TextField("Name", (string)Name.GetValue(target)));
+        Name.SetValue(target, EditorGUILayout.TextField("Name",GetFieldValue<string>(Name)));
         EditorGUILayout.LabelField("Description");
-        Desc.SetValue(target, EditorGUILayout.TextArea((string)Desc.GetValue(target), new GUILayoutOption[]
+        Desc.SetValue(target, EditorGUILayout.TextArea(GetFieldValue<string>(Desc), new GUILayoutOption[]
         {
-            GUILayout.Height(25)
+            GUILayout.Height(100),
         }));
 
-        cardType.SetValue(target, (int)(cardTypeEnum)EditorGUILayout.EnumPopup("Card Type", (cardTypeEnum)cardType.GetValue(target)));
+        cardType.SetValue(target, (int)(cardTypeEnum)EditorGUILayout.EnumPopup("Card Type", GetFieldValue<cardTypeEnum>(cardType)));
 
-        if ((cardTypeEnum)cardType.GetValue(target) != cardTypeEnum.CHARACTER)
+        if (IsCharacterCard())
         {
-            heals.SetValue(target, (bool)EditorGUILayout.Toggle("Heals", (bool)heals.GetValue(target)));
-            
-            string damageLable = ((bool)heals.GetValue(target)) ? "Healing amount" : "Damage";
-            
-            damageAmount.SetValue(target, EditorGUILayout.Slider(damageLable, (float)damageAmount.GetValue(target), 0, HpManager.maxHp));
-            consequenceTarget.SetValue(target, (consequenceTarget)EditorGUILayout.EnumPopup("Target", (consequenceTarget)consequenceTarget.GetValue(target)));
-            //do card effects here
+            EditorUtility.SetDirty(target);
+            return;
         }
+
+        heals.SetValue(target, (bool)EditorGUILayout.Toggle("Heals", GetFieldValue<bool>(heals)));
+
+        string damageLable = ((bool)heals.GetValue(target)) ? "Healing amount" : "Damage";
+
+        damageAmount.SetValue(target, EditorGUILayout.Slider(damageLable, (float)damageAmount.GetValue(target), 0, HpManager.maxHp));
+        consequenceTarget.SetValue(target, (consequenceTarget)EditorGUILayout.EnumPopup("Target", GetFieldValue<consequenceTarget>(consequenceTarget)));
+        //do card effects here
 
         if ((consequenceTarget)consequenceTarget.GetValue(target) == global::consequenceTarget.SPECIFIC_GROUP_INC ||
             ((consequenceTarget)consequenceTarget.GetValue(target) == global::consequenceTarget.SPECIFIC_GROUP_EX))
-                numberOfAffectedPlayers.SetValue(target, EditorGUILayout.IntField("Number Of Affected Players", (int)numberOfAffectedPlayers.GetValue(target)));
+            numberOfAffectedPlayers.SetValue(target, EditorGUILayout.IntField("Number Of Affected Players", GetFieldValue<int>(numberOfAffectedPlayers)));
 
         if ((int)numberOfAffectedPlayers.GetValue(target) == -1)
         {
@@ -84,11 +92,25 @@ public class CardScriptableEditor : Editor
             EditorGUILayout.EndFoldoutHeaderGroup();
         }
 
+        hasSoundEffect.SetValue(target, EditorGUILayout.Toggle("Has Sound Effect", GetFieldValue<bool>(hasSoundEffect)));
+
+        if (GetFieldValue<bool>(hasSoundEffect)) onUseSoundEffect.SetValue(target, EditorGUILayout.ObjectField("Audio To Play On Use", GetFieldValue<AudioClip>(onUseSoundEffect), typeof(AudioClip), false));
+        //makes is so that the editor, on closure, writes the modified data on disk
         EditorUtility.SetDirty(target);
         //EditorGUILayout.PropertyField(serializedObject.FindProperty("affectedTags"));//affectedTags.SetValue(target, (playerTagsEnum)EditorGUILayout.Foldout("Affected tags", (playerTagsEnum)affectedTags.GetValue(target)));
 
 
         if (EditorGUI.EndChangeCheck()) serializedObject.ApplyModifiedProperties();
+    }
+
+    private T GetFieldValue<T>(FieldInfo fieldInfo)
+    {
+        return (T)fieldInfo.GetValue(target);
+    }
+    
+    private bool IsCharacterCard()
+    {
+        return (cardTypeEnum)cardType.GetValue(target) == cardTypeEnum.CHARACTER;
     }
 
     private void HandleArray(int arrSize)

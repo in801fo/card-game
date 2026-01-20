@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
 using Unity.Netcode;
@@ -12,6 +13,15 @@ public class PlayerTagAssigner : NetworkBehaviour
     private void Awake()
     {
         InventoryManager.OnCardAddedToHandDeck += HandleHasMeridione;
+        InventoryManager.OnGroupCardAddedToHandDeck += CheckInGroupHasMeridione;
+    }
+
+    private void CheckInGroupHasMeridione(List<CardScriptable> cards)
+    {
+        for (int i = 0; i < cards.Count; i++)
+        {
+            HandleHasMeridione(cards[i]);
+        }
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]

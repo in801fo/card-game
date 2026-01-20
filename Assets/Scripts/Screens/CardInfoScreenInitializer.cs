@@ -28,6 +28,8 @@ public class CardInfoScreenInitializer : ScreenInitializer<Card>
     
     private void EffectsScrollView()
     {
+        if (card.cardData.Type == cardTypeEnum.CHARACTER) 
+            return;
         //To go around a bug which, for the love of God, I cannot figure out the origin,
         //I pool existing effects and will only show the ones which the current card has
         if (!hasInitialized) InitializeEffectsScrollView();

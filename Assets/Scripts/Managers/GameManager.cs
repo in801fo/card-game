@@ -19,6 +19,7 @@ public class GameManager : NetworkBehaviour
     [SerializeField] private NetworkUIHandler networkUIHandler;
     [SerializeField] private NetworkManager networkManager;
     [SerializeField] private PlayerTagAssigner playerTagAssigner;
+    [SerializeField] private AudioManager audioManager;
 
     public static Dictionary<ulong, playerInfo> playersDict { get; private set; } = new Dictionary<ulong, playerInfo>();
     public static NetworkVariable<int> playerCount { get; private set; } = new NetworkVariable<int>(0);
@@ -114,6 +115,7 @@ public class GameManager : NetworkBehaviour
         HandleInventoryGeneration();
         HandleCardGeneration();
         HandleHealthGeneration();
+        HandleAudioGeneration();
 
         //here getting the setting the parent to the managersHolder
         for (int i = 0; i < managers.Count; i++)
@@ -132,6 +134,14 @@ public class GameManager : NetworkBehaviour
         if (coordinatedMonoBehaviourCount == actualInheriting)
             OnDoneGenerating?.Invoke();
 
+    }
+
+    private void HandleAudioGeneration()
+    {
+        new GameObject("== Audio Manager ==");
+        //cardHandling.transform.SetParent(managersHolder.transform);
+
+        managers.Add(Instantiate(audioManager.gameObject));
     }
 
     #region Managers Generation Handlers
