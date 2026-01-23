@@ -10,17 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f0e4ba4922ff9a049ba339aa4c3dbc8c, type: 3}
-  m_Name: Info
+  m_Name: Kim
   m_EditorClassIdentifier: Assembly-CSharp::CardScriptable
-  <Name>k__BackingField: Info
+  <Name>k__BackingField: Kim
   <Sprite>k__BackingField: {fileID: 0}
-  <Description>k__BackingField: Sto cazzooooo
+  <Description>k__BackingField: 
   <Type>k__BackingField: 1
   <consequenceTarget>k__BackingField: 0
   <numberOfAffectedPlayers>k__BackingField: 0
   <Heals>k__BackingField: 0
-  <damageAmount>k__BackingField: 1
-  <cardEffects>k__BackingField: 0000000001000000
+  <damageAmount>k__BackingField: 0
+  <cardEffects>k__BackingField: 
   <maxCardUsages>k__BackingField: 0
   affectedTags: 
   <hasSoundEffect>k__BackingField: 0

@@ -1,12 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using Unity.VisualScripting;
-using UnityEditor;
-using UnityEditorInternal;
 using UnityEngine;
-using UnityEngine.XR;
 
 public class InventoryManager : CoordinatedMonoBehaviour
 {
@@ -17,6 +12,7 @@ public class InventoryManager : CoordinatedMonoBehaviour
     public static Action<CardScriptable> OnCardAddedToHandDeck;
     public static Action<List<CardScriptable>> OnGroupCardAddedToHandDeck;
     public static Action<CardScriptable, int> OnCardMoved;
+    public static Action<CardScriptable> OnCardRemovedFromHandDeck;
 
     public static InventoryManager Instance;
     public Action OnZeroCards;
@@ -32,9 +28,10 @@ public class InventoryManager : CoordinatedMonoBehaviour
 
     protected override void Beginning()
     {
-        Card.OnCardUseReady += HandleCardUse;
         //RuntimeMsg.Info(Directory.Exists("D:\\Github\\card-game\\Assets\\Scriptables\\Cards\\Character").ToString());
         allCardScriptables = Resources.LoadAll<CardScriptable>("Scriptables");
+
+        Card.OnCardZeroUsages += OnCardZeroUsages;
     }
 
     public void AddCard(CardScriptable card, bool signal = true)
@@ -69,6 +66,7 @@ public class InventoryManager : CoordinatedMonoBehaviour
         }
     }
     
+    
     private void LoadAllCardsInInventory()
     {
         for (int i = 0; i < allCardScriptables.Length; i++)
@@ -91,18 +89,13 @@ public class InventoryManager : CoordinatedMonoBehaviour
         if (removeFromHandDeck)
         {
             handDeck.Remove(card);
+            OnCardRemovedFromHandDeck?.Invoke(card);
             if (handDeck.Count == 0) OnZeroCards?.Invoke();
             return;
         }
 
         sideDeck.Remove(card);
     }
-    
-    private void HandleCardUse(Card card)
-    {
-        RemoveCard(card, true);
-    }
-
 
     public void RemoveCard(Card card, bool removeFromHandDeck = true)
     {
@@ -139,9 +132,13 @@ public class InventoryManager : CoordinatedMonoBehaviour
         return handDeck.Count;
     }
 
+    private void OnCardZeroUsages(Card card)
+    {
+        RemoveCard(card.cardData);
+    }
+
     private void OnDestroy()
     {
-        Card.OnCardUseReady -= HandleCardUse;
         GameManager.OnDoneGenerating -= Beginning;
     }
 }

@@ -4,6 +4,9 @@ using System.Reflection;
 using UnityEngine.UI;
 using System.Collections.Generic;
 using System.Linq;
+using System;
+using System.IO;
+using System.Text;
 
 public class DrawDebugUI : MonoBehaviour
 {
@@ -37,7 +40,6 @@ public class DrawDebugUI : MonoBehaviour
 
     private List<GameObject> fieldContainers = new List<GameObject>();
 
-
     private void Awake(){
         InitializeUI();
         Application.logMessageReceived += HandleUnityLog;
@@ -59,7 +61,12 @@ public class DrawDebugUI : MonoBehaviour
         CreateDebugCanvas();
         CreateDebugScrollView();
         CreateSaveLoadInterface();
-        if (errorConsole == null) CreateErrorConsole();
+        if (errorConsole == null) {
+            ErrorConsoleHandler consoleHandler = CreateErrorConsole();
+            consoleHandler.InitializeErrorConsole();
+        }
+
+        DontDestroyOnLoad(parentCanvas.gameObject);
 
         fieldDebugCollection.SetActive(false);
         errorConsole.SetActive(false);
@@ -115,7 +122,7 @@ public class DrawDebugUI : MonoBehaviour
         saveLoadInterface.transform.SetParent(fieldDebugCollection.transform);
     }
 
-    public void CreateErrorConsole()
+    public ErrorConsoleHandler CreateErrorConsole()
     {
         //error console
         errorConsole = Instantiate(_errorConsole, Vector3.zero, Quaternion.identity);
@@ -124,6 +131,8 @@ public class DrawDebugUI : MonoBehaviour
         RectTransform consoleTransform = errorConsole.GetComponentInChildren<RectTransform>();
         consoleTransform.anchoredPosition = Vector3.zero;
         consoleTransform.sizeDelta = new Vector2(Screen.width, consoleTransform.sizeDelta.y);
+
+        return errorConsole.GetComponent<ErrorConsoleHandler>();
     }
     
     private Transform GenerateCanvas(string canvasName = "")

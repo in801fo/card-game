@@ -96,12 +96,13 @@ public class CardGraphics : MonoBehaviour
     public void SetUpInfoCard(Card card)
     {
         SetUpGameCard(CardGenerationManager.Instance.GetCardFrontIndex(card.cardData.Type), card);
-        
+
         descBox.SetText(card.cardData.Description);
 
+        //TODO: improve formatting in strings
         if (card.cardData.Type != cardTypeEnum.CHARACTER)
-            damageBox.SetText("Damage: " + card.cardData.damageAmount);
-        else damageBox.SetText("Character cards don't inflict any damage");
+            damageBox.SetText("Damage: " + card.cardData.damageAmount + "\nMax Usages: " + card.cardData.maxCardUsages + "\nLeft Usages: " + card.currentCardWear);
+        else damageBox.SetText("No Damage\nNo Max Usages");
         isInfoCard = true;
     }
 

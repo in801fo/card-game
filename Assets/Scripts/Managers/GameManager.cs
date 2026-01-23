@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Unity.Netcode;
-using Unity.VisualScripting;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -16,19 +15,16 @@ public class GameManager : NetworkBehaviour
     [SerializeField] private CardInteractionManager cardInteractionManager;
     [SerializeField] private HpManager healthManager;
     [SerializeField] private HpUIManager healthUIManager;
-    [SerializeField] private NetworkUIHandler networkUIHandler;
-    [SerializeField] private NetworkManager networkManager;
     [SerializeField] private PlayerTagAssigner playerTagAssigner;
     [SerializeField] private AudioManager audioManager;
 
     public static Dictionary<ulong, playerInfo> playersDict { get; private set; } = new Dictionary<ulong, playerInfo>();
-    public static NetworkVariable<int> playerCount { get; private set; } = new NetworkVariable<int>(0);
     /// <summary>
     /// This network list is used to then create the dictionary on the single clients,
     /// the playersNetList si synchronized across all clients, the dictionary is not.
     /// The dictionary only exists as an easier way to save player refs
     /// </summary>
-    private static NetworkList<playerInfo> playersNetList = new NetworkList<playerInfo>();
+    private static NetworkList<playerInfo> playersNetList = new NetworkList<playerInfo>(null, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     private static List<GameObject> managers = new List<GameObject>();
 
@@ -43,22 +39,15 @@ public class GameManager : NetworkBehaviour
     public static GameManager Instance { get; private set; }
 
     private void Awake()
-    {
-        managers.Add(Instantiate(debugUIManager.gameObject));
-        DebugUIManager.GenerateOnlyErrorConsole();
-
-        managers.Add(Instantiate(networkManager.gameObject));
-        managers.Add(Instantiate(networkUIHandler.gameObject));
-
+    {        
         managers.Add(Instantiate(playerTagAssigner.gameObject));
 
         NetworkManager.Singleton.OnClientConnectedCallback += HandleOnLocalClientConnected;
 
-        //only happens on the server
-        NetworkUIHandler.OnGameStart += HandleGameStart;
+        if(IsServer) HandleGameStartClient_Rpc();
         
         if (Instance == null) Instance = this;
-        else Destroy(this);
+        else Destroy(this.gameObject);
     }
 
     /// <summary>
@@ -67,11 +56,17 @@ public class GameManager : NetworkBehaviour
     /// <param name="obj"></param>
     private void HandleOnLocalClientConnected(ulong obj)
     {
-        if (!IsClient) return;
+        if (IsHost && playersNetList.Count > 0) return;
+
+        #if UNITY_STANDALONE_WIN
+        IntPtr windowInt = WindowUtil.GetActiveWindow();
+        WindowUtil.SetWindowTitle(windowInt, $"Local Client Id: {NetworkManager.LocalClientId}");
+        #endif
 
         RuntimeMsg.Info("You are connected!", $"You have successfully connected to the server (id: {NetworkManager.ServerClientId}), your id is {NetworkManager.LocalClientId}");
 
         SignalConnectionToServer_Rpc(string.Empty, (int)pronouns.HEHIM, NetworkManager.LocalClientId);
+
     }
 
     /// <summary>
@@ -93,11 +88,6 @@ public class GameManager : NetworkBehaviour
     {
         playersDict.Clear();
         InitializePlayersDictionary();
-    }
-
-    private void HandleGameStart()
-    {
-        HandleGameStartClient_Rpc();
     }
 
     [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
@@ -209,14 +199,16 @@ public class GameManager : NetworkBehaviour
     {
 
         ulong clientId = senderId;
+        string cappedUsername = (username.Length > 61) ? username.Substring(0, 60) : username;
+
 
         RuntimeMsg.Info($"Client {clientId} Connected!");
 
         playerInfo playerInfo = new playerInfo()
         {
             //need to do this on the server as otherwise, in the case in which a player is without a name the random string wouldn't be syncronized
-            Name = string.IsNullOrEmpty(username) ?
-                namePrefixWhenNameEmpty + Random.Range(1000, 5000).ToString() : username,
+            Name = string.IsNullOrEmpty(cappedUsername) ?
+                namePrefixWhenNameEmpty + Random.Range(1000, 5000).ToString() : cappedUsername,
             Pronouns = (pronouns)pronouns,
             playerId = senderId
         };
@@ -242,7 +234,7 @@ public class GameManager : NetworkBehaviour
         }
 
         playersDict.Add(clientId, player);
-        playerCount.Value = playersDict.Count;
+        //playerCount.Value = playersDict.Count;
 
         return true;
     }

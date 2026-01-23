@@ -52,9 +52,25 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
 
         InventoryManager.OnCardAddedToHandDeck += HandleCardAdded;
         InventoryManager.OnGroupCardAddedToHandDeck += HandleGroupCardsAdded;
+        InventoryManager.OnCardRemovedFromHandDeck += HandleCardRemoved;
+
 
 
         HandleCardGeneration();
+    }
+
+    private void HandleCardRemoved(CardScriptable scriptable)
+    {
+        int indexInList = cards.FindIndex((CardGraphics cardGraphics) => cardGraphics.card.cardData == scriptable);
+        if (indexInList == -1)
+        {
+            RuntimeMsg.Warning("Tried to remove inexistent card", $"Passed card which was not found: {scriptable.ToString()}");
+            return;
+        }
+        Destroy(cards[indexInList].gameObject);
+        cards.RemoveAt(indexInList);
+        
+        HandleAnimateCards();
     }
 
     private void HandleCardRelease(Card cardHolding)

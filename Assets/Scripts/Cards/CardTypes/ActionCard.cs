@@ -4,14 +4,19 @@ using Unity.Netcode;
 
 public class ActionCard : Card
 {
+    private PlayerConsequenceScreenHandler handleToPlayerConsequenceScreen;
+
     public override void UseCard()
     {
         base.UseCard();
         DecideDamageArea();
-        if (cardData.cardEffects == null || cardData.cardEffects.Length == 0) return;
-            EffectManager.ApplyEffects(cardData.cardEffects.ToList());
-            
-        OnCardUseReady?.Invoke(this);
+        //if this card uses a player consequence screen to decide whom should get damaged...
+        if (handleToPlayerConsequenceScreen != null)
+            //do this...
+            PlayerConsequenceScreenHandler.OnDoneDeciding += HandleReadyToUse;
+        else //otherwise...
+            HandleReadyToUse();
+
     }
 
     public void DecideDamageArea()
@@ -44,11 +49,21 @@ public class ActionCard : Card
                 break;
         }
     }
-    
+
+    private void HandleReadyToUse(List<ulong> _ = null)
+    {
+        ReduceCardUse();
+        if (cardData.cardEffects != null && cardData.cardEffects.Length != 0)
+            EffectManager.ApplyEffects(cardData.cardEffects.ToList());
+        if (cardData.hasSoundEffect) 
+            AudioManager.PlayCardSFX(cardData.onUseSoundEffect);
+        OnCardUseReady?.Invoke(this);
+    }
+
     private void HandleRequestForSpecificGroup()
     {
         if (cardData.numberOfAffectedPlayers > 0)
-            GameScreensManager.Instance.AskForPlayerGroup(cardData.numberOfAffectedPlayers, cardData.consequenceTarget);
+            handleToPlayerConsequenceScreen = GameScreensManager.Instance.AskForPlayerGroup(cardData.numberOfAffectedPlayers, cardData.consequenceTarget);
         else HpManager.Instance.HandleAffectedTagsServer_Rpc(cardData.affectedTags, cardData.damageAmount, cardData.Heals);
     }
 

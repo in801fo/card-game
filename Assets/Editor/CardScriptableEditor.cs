@@ -22,6 +22,7 @@ public class CardScriptableEditor : Editor
     private FieldInfo heals;
     private FieldInfo hasSoundEffect;
     private FieldInfo onUseSoundEffect;
+    private FieldInfo maxCardUsages;
 
     //private CardScriptable target;
 
@@ -43,6 +44,7 @@ public class CardScriptableEditor : Editor
         _affectedTags = serializedObject.FindProperty("affectedTags");
         hasSoundEffect = GetBackingField(target, "hasSoundEffect");
         onUseSoundEffect = GetBackingField(target, "onUseSoundEffect");
+        maxCardUsages = GetBackingField(target, "maxCardUsages");
     }
 
 
@@ -65,36 +67,36 @@ public class CardScriptableEditor : Editor
             return;
         }
 
+        EditorGUILayout.Separator();
+
         heals.SetValue(target, (bool)EditorGUILayout.Toggle("Heals", GetFieldValue<bool>(heals)));
 
         string damageLable = ((bool)heals.GetValue(target)) ? "Healing amount" : "Damage";
 
-        damageAmount.SetValue(target, EditorGUILayout.Slider(damageLable, (float)damageAmount.GetValue(target), 0, HpManager.maxHp));
+        damageAmount.SetValue(target, EditorGUILayout.Slider(damageLable, GetFieldValue<float>(damageAmount), 0, HpManager.maxHp));
+
+        maxCardUsages.SetValue(target, (int)EditorGUILayout.Slider("Max Card Usages", GetFieldValue<int>(maxCardUsages), 0, CardScriptable.maxCardUsagesConst));
+
         consequenceTarget.SetValue(target, (consequenceTarget)EditorGUILayout.EnumPopup("Target", GetFieldValue<consequenceTarget>(consequenceTarget)));
         //do card effects here
 
+
         if ((consequenceTarget)consequenceTarget.GetValue(target) == global::consequenceTarget.SPECIFIC_GROUP_INC ||
             ((consequenceTarget)consequenceTarget.GetValue(target) == global::consequenceTarget.SPECIFIC_GROUP_EX))
-            numberOfAffectedPlayers.SetValue(target, EditorGUILayout.IntField("Number Of Affected Players", GetFieldValue<int>(numberOfAffectedPlayers)));
-
-        if ((int)numberOfAffectedPlayers.GetValue(target) == -1)
         {
-            EditorGUI.indentLevel = 1;
-            showTags = EditorGUILayout.BeginFoldoutHeaderGroup(showTags, "Card's Affected Tags");
-
-            if (showTags)
-            {
-                _affectedTags.arraySize = EditorGUILayout.IntField(_affectedTags.arraySize);
-                HandleArray(_affectedTags.arraySize);
-            }
-
-            EditorGUI.indentLevel = 0;
-            EditorGUILayout.EndFoldoutHeaderGroup();
+            numberOfAffectedPlayers.SetValue(target, EditorGUILayout.IntField("Number Of Affected Players", GetFieldValue<int>(numberOfAffectedPlayers)));
+            
+            if ((int)numberOfAffectedPlayers.GetValue(target) == -1)
+                HandleAffectedTags();
         }
+
+        EditorGUILayout.Separator();
 
         hasSoundEffect.SetValue(target, EditorGUILayout.Toggle("Has Sound Effect", GetFieldValue<bool>(hasSoundEffect)));
 
-        if (GetFieldValue<bool>(hasSoundEffect)) onUseSoundEffect.SetValue(target, EditorGUILayout.ObjectField("Audio To Play On Use", GetFieldValue<AudioClip>(onUseSoundEffect), typeof(AudioClip), false));
+        if (GetFieldValue<bool>(hasSoundEffect))
+            onUseSoundEffect.SetValue(target, EditorGUILayout.ObjectField("Audio To Play On Use", GetFieldValue<AudioClip>(onUseSoundEffect), typeof(AudioClip), false));
+        
         //makes is so that the editor, on closure, writes the modified data on disk
         EditorUtility.SetDirty(target);
         //EditorGUILayout.PropertyField(serializedObject.FindProperty("affectedTags"));//affectedTags.SetValue(target, (playerTagsEnum)EditorGUILayout.Foldout("Affected tags", (playerTagsEnum)affectedTags.GetValue(target)));
@@ -106,6 +108,22 @@ public class CardScriptableEditor : Editor
     private T GetFieldValue<T>(FieldInfo fieldInfo)
     {
         return (T)fieldInfo.GetValue(target);
+    }
+
+    private void HandleAffectedTags()
+    {
+        EditorGUI.indentLevel = 1;
+        showTags = EditorGUILayout.BeginFoldoutHeaderGroup(showTags, "Card's Affected Tags");
+
+        if (showTags)
+        {
+            _affectedTags.arraySize = EditorGUILayout.IntField(_affectedTags.arraySize);
+            HandleArray(_affectedTags.arraySize);
+        }
+
+        EditorGUI.indentLevel = 0;
+        EditorGUILayout.EndFoldoutHeaderGroup();
+        
     }
     
     private bool IsCharacterCard()

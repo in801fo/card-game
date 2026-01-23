@@ -1,0 +1,85 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3790086157560464885
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1723446504022619210}
+  - component: {fileID: 2987894912310010273}
+  - component: {fileID: 6489276686676324268}
+  m_Layer: 0
+  m_Name: GameManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1723446504022619210
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3790086157560464885}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -9.683228, y: -4.78524, z: 24.37426}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2987894912310010273
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3790086157560464885}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 2179887656
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 0
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &6489276686676324268
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3790086157560464885}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 146dab29d155fa949b315c54dad300ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameManager
+  ShowTopMostFoldoutHeaderGroup: 1
+  debugUIManager: {fileID: 4079937948980276031, guid: cfca462673c51e64f80982c9924b4baf, type: 3}
+  inventoryManager: {fileID: 1210240002159481530, guid: df7bea53eaf5af4438f9a5104187c15e, type: 3}
+  screensManager: {fileID: 423827317838303333, guid: 0f114fe6256a7d44f9f9bbaf9dde25dd, type: 3}
+  inventoryUIManager: {fileID: 468855255597921346, guid: 4860df683c2daca4a8ecae6d094955c7, type: 3}
+  cardGenerationManager: {fileID: 9195784169470613541, guid: 68d900e20aca4d448bc0a12d3457d074, type: 3}
+  cardInteractionManager: {fileID: 7329309651390638999, guid: 726692b8043db0240bdfe546c7f094d3, type: 3}
+  healthManager: {fileID: 9019541580210870312, guid: 916fe90deaa9daf459827bca3bcecba8, type: 3}
+  healthUIManager: {fileID: 4183306118934384413, guid: b322f22bff0c3d74abf702aecd55ce2d, type: 3}
+  networkUIHandler: {fileID: 6481871046708386260, guid: 29a717ac55691b2478a22e2b29950f19, type: 3}
+  networkManager: {fileID: 6578108104356264235, guid: 3c06aafcc59f34142b23bcf0131a9fb9, type: 3}
+  playerTagAssigner: {fileID: 558722634936090784, guid: 4e9669b9c3f792746a214d98ba80609e, type: 3}
+  audioManager: {fileID: 5492879894825478014, guid: 4d2741658ec08374ba94c55a0b287e74, type: 3}

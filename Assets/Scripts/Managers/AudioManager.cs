@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using UnityEngine;
 
 public class AudioManager : MonoBehaviour
@@ -24,6 +25,11 @@ public class AudioManager : MonoBehaviour
 
     public static void PlayCardSFX(AudioClip clip)
     {
+        if (clip == null)
+        {
+            RuntimeMsg.Warning("Tried to play null clip"); 
+            return;
+        }
         cardSFXAudioSource.clip = clip;
         cardSFXAudioSource.Play();
     }
