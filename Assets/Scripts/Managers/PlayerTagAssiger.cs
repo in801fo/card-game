@@ -8,7 +8,7 @@ public class PlayerTagAssigner : NetworkBehaviour
 {
 
     //TODO: change this shit, smells like my ass
-    private readonly string[] southerners = {"In801fo", "Rin", "Wocy", "Info"};
+    private readonly string[] southerners = { "In801fo", "Rin", "Wocy", "Info" };
 
     private void Awake()
     {
@@ -29,7 +29,7 @@ public class PlayerTagAssigner : NetworkBehaviour
     {
         if (Type == cardTypeEnum.CHARACTER &&
             southerners.Contains(Name.ToString()))
-                AssignTagClient_Rpc(caller, playerTagsEnum.HAS_MERIDIONE);
+            AssignTagClient_Rpc(caller, playerTagsEnum.HAS_MERIDIONE);
     }
 
     [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
@@ -41,9 +41,7 @@ public class PlayerTagAssigner : NetworkBehaviour
 
     private void HandleHasMeridione(CardScriptable scriptable)
     {
-        HandleHasMeridioneServer_Rpc(NetworkManager.LocalClientId, scriptable.Type, scriptable.Name);
+        FixedString64Bytes scriptableName = new FixedString64Bytes(scriptable.Name);
+        HandleHasMeridioneServer_Rpc(NetworkManager.LocalClientId, scriptable.Type, scriptableName);
     }
-    
-
-    
 }

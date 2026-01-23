@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Random = UnityEngine.Random;
 
 public class GameManager : NetworkBehaviour
@@ -17,6 +18,9 @@ public class GameManager : NetworkBehaviour
     [SerializeField] private HpUIManager healthUIManager;
     [SerializeField] private PlayerTagAssigner playerTagAssigner;
     [SerializeField] private AudioManager audioManager;
+    [SerializeField] private NetworkManager networkManager;
+    [SerializeField] private GameObject networkUI;
+
 
     public static Dictionary<ulong, playerInfo> playersDict { get; private set; } = new Dictionary<ulong, playerInfo>();
     /// <summary>
@@ -39,28 +43,37 @@ public class GameManager : NetworkBehaviour
     public static GameManager Instance { get; private set; }
 
     private void Awake()
-    {        
-        managers.Add(Instantiate(playerTagAssigner.gameObject));
+    {
+        DontDestroyOnLoad(this.gameObject);
 
-        NetworkManager.Singleton.OnClientConnectedCallback += HandleOnLocalClientConnected;
+        managers.Add(Instantiate(networkManager.gameObject));
+        Instantiate(networkUI.gameObject);
+        managers.Add(Instantiate(debugUIManager.gameObject));
 
-        if(IsServer) HandleGameStartClient_Rpc();
-        
+        NetworkManager.OnClientConnectedCallback += HandleOnLocalClientConnected;
+        NetworkManager.OnServerStarted += HandleLocalIsServer;
+
         if (Instance == null) Instance = this;
         else Destroy(this.gameObject);
     }
+    
+    private void HandleLocalIsServer()
+    {
+        NetworkManager.SceneManager.OnLoadEventCompleted += (_, _, _, _) => HandleGameStartClient_Rpc(); 
+        
+    }
 
     /// <summary>
-    /// This is only called once the local client connects to the server, also calls on the server but not used
+    /// This is only called once the local client connects to the server, also calls on the server but ignored
     /// </summary>
     /// <param name="obj"></param>
     private void HandleOnLocalClientConnected(ulong obj)
     {
-        if (IsHost && playersNetList.Count > 0) return;
+        //if (IsHost && playersNetList.Count > 0) return;
 
         #if UNITY_STANDALONE_WIN
-        IntPtr windowInt = WindowUtil.GetActiveWindow();
-        WindowUtil.SetWindowTitle(windowInt, $"Local Client Id: {NetworkManager.LocalClientId}");
+            IntPtr windowInt = WindowUtil.GetActiveWindow();
+            WindowUtil.SetWindowTitle(windowInt, $"Local Client Id: {NetworkManager.LocalClientId}");
         #endif
 
         RuntimeMsg.Info("You are connected!", $"You have successfully connected to the server (id: {NetworkManager.ServerClientId}), your id is {NetworkManager.LocalClientId}");
@@ -106,6 +119,8 @@ public class GameManager : NetworkBehaviour
         HandleCardGeneration();
         HandleHealthGeneration();
         HandleAudioGeneration();
+        HandleTagAssigner();
+        
 
         //here getting the setting the parent to the managersHolder
         for (int i = 0; i < managers.Count; i++)
@@ -126,6 +141,13 @@ public class GameManager : NetworkBehaviour
 
     }
 
+    private void HandleTagAssigner()
+    {
+        if (!IsServer) return;
+        managers.Add(Instantiate(playerTagAssigner.gameObject));
+        managers[managers.Count - 1].GetComponent<NetworkBehaviour>().NetworkObject.Spawn();
+    }
+
     private void HandleAudioGeneration()
     {
         new GameObject("== Audio Manager ==");
@@ -144,7 +166,7 @@ public class GameManager : NetworkBehaviour
     {
         GameObject healthHandling = new GameObject("== Health Handling ==");
         //healthHandling.transform.SetParent(managersHolder.transform);
-        if (IsHost)
+        if (IsServer)
         {
             managers.Add(Instantiate(healthManager.gameObject));
             managers[managers.Count - 1].GetComponent<NetworkBehaviour>().NetworkObject.Spawn();
@@ -197,10 +219,8 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     public void SignalConnectionToServer_Rpc(string username, int pronouns, ulong senderId)
     {
-
         ulong clientId = senderId;
         string cappedUsername = (username.Length > 61) ? username.Substring(0, 60) : username;
-
 
         RuntimeMsg.Info($"Client {clientId} Connected!");
 
