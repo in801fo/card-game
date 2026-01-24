@@ -16,13 +16,14 @@ public class AudioManager : MonoBehaviour
     {
         bgAudioSource = GameObject.FindWithTag(bgMusicAudioSourceLabel).GetComponent<AudioSource>();
         cardSFXAudioSource = GameObject.FindWithTag(cardSFXAudioSourceLabel).GetComponent<AudioSource>();
-        if(bgMusic != null)
+        if (bgMusic != null)
         {
             bgAudioSource.clip = bgMusic;
             bgAudioSource.Play();
         }
     }
 
+    //TODO: continue implementation make it so that all connected clients, if required so, reproduce the audio
     public static void PlayCardSFX(AudioClip clip)
     {
         if (clip == null)
