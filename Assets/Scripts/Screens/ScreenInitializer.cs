@@ -1,20 +1,26 @@
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// The base class from which every screen in the game inherits from
+/// </summary>
+/// <typeparam name="T">The type of data required from <c>Initialize</c> to correctly set all values</typeparam>
 public class ScreenInitializer<T> : MonoBehaviour
 {
+    /// <summary>
+    /// The local screen's id
+    /// </summary>
     public string screenID
     {
         get
         {
             return _screenID;
-        } 
+        }
         set
         {
             //set it only once
-            if (_screenID == null || _screenID == string.Empty) 
+            if (_screenID == null || _screenID == string.Empty)
                 _screenID = value;
         }
     }
@@ -30,7 +36,7 @@ public class ScreenInitializer<T> : MonoBehaviour
 
     protected virtual void Awake()
     {
-        if (closeButton != null) closeButton.onClick.AddListener(GameScreensManager.CloseCurrentScreen);
+        if (closeButton != null) closeButton.onClick.AddListener(ScreensManager.CloseCurrentScreen);
         else RuntimeMsg.Warning($"No close button instance was provided for screen {this.name}");
 
         SetScreenHeading(string.Empty, false);
@@ -42,7 +48,7 @@ public class ScreenInitializer<T> : MonoBehaviour
 
         if (screenHeading != null) screenHeading.SetText(screenHeadingText);
         else RuntimeMsg.Warning($"No screen heading instance was provided for screen {this.name}");
-    
+
     }
 
     /// <summary>
@@ -51,6 +57,6 @@ public class ScreenInitializer<T> : MonoBehaviour
     /// <param name="initializingValues"></param>
     public virtual void Initialize(T initializingValues)
     {
-        hasInitialized = true;   
+        hasInitialized = true;
     }
 }

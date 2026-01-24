@@ -1,9 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class HpUIManager : MonoBehaviour
+public class HpUIManager : CoordinatedMonoBehaviour
 {
     [SerializeField] private Canvas healthUICanvasPrefab;
     [SerializeField] private GameObject healthUIPlayerBarPrefab;
@@ -12,10 +11,15 @@ public class HpUIManager : MonoBehaviour
 
     private HealthBarUIHandler healthBarUI;
 
-    private void Awake()
+    protected override void Awake()
+    {
+        base.Awake();
+        GameManager.OnDoneGenerating += GenerateHpUI;
+    }
+
+    protected override void Beginning()
     {
         healthUICanvasInstance = Instantiate(healthUICanvasPrefab);
-        GameManager.OnDoneGenerating += GenerateHpUI;
     }
 
     private void GenerateHpUI()

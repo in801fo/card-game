@@ -6,6 +6,9 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// A class representing an entry in the PlayerConsequenceScreen
+/// </summary>
 public class PlayerEntry : MonoBehaviour
 {
     private Toggle toggle;
@@ -29,6 +32,10 @@ public class PlayerEntry : MonoBehaviour
         lable.SetText(info.Name.ToString());
     }
 
+    /// <summary>
+    /// Unticks the local toggle if the number of ON toggles has surpassed the asked amount
+    /// </summary>
+    /// <param name="id"></param>
     private void UntickOnExceededPlayerCount(ulong id)
     {
         if (id == representingPlayer.playerId) toggle.isOn = false;

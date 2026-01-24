@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.SocialPlatforms;
 using Random = UnityEngine.Random;
 
 public class GameManager : NetworkBehaviour
 {
-
     [SerializeField] private DebugUIManager debugUIManager;
     [SerializeField] private InventoryManager inventoryManager;
-    [SerializeField] private GameScreensManager screensManager;
+    [SerializeField] private ScreensManager screensManager;
     [SerializeField] private InventoryUIManager inventoryUIManager;
     [SerializeField] private CardGenerationManager cardGenerationManager;
     [SerializeField] private CardInteractionManager cardInteractionManager;
@@ -21,7 +21,7 @@ public class GameManager : NetworkBehaviour
     [SerializeField] private NetworkManager networkManager;
     [SerializeField] private GameObject networkUI;
 
-
+    private NetworkUIHandler networkUIHandler;
     public static Dictionary<ulong, playerInfo> playersDict { get; private set; } = new Dictionary<ulong, playerInfo>();
     /// <summary>
     /// This network list is used to then create the dictionary on the single clients,
@@ -29,6 +29,10 @@ public class GameManager : NetworkBehaviour
     /// The dictionary only exists as an easier way to save player refs
     /// </summary>
     private static NetworkList<playerInfo> playersNetList = new NetworkList<playerInfo>(null, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    private static playerInfo localPlayerInfo;
+
+    public static string noUsernameProvidedUsernameFallback;
 
     private static List<GameObject> managers = new List<GameObject>();
 
@@ -45,9 +49,9 @@ public class GameManager : NetworkBehaviour
     private void Awake()
     {
         DontDestroyOnLoad(this.gameObject);
+        DontDestroyOnLoad(HandleScreenManager());
+        HandleNetworkManagers();
 
-        managers.Add(Instantiate(networkManager.gameObject));
-        Instantiate(networkUI.gameObject);
         managers.Add(Instantiate(debugUIManager.gameObject));
 
         NetworkManager.OnClientConnectedCallback += HandleOnLocalClientConnected;
@@ -56,11 +60,23 @@ public class GameManager : NetworkBehaviour
         if (Instance == null) Instance = this;
         else Destroy(this.gameObject);
     }
-    
+
+    private void HandleNetworkManagers()
+    {
+        managers.Add(Instantiate(networkManager.gameObject));
+        networkUIHandler = Instantiate(networkUI.gameObject).GetComponent<NetworkUIHandler>();
+    }
+
     private void HandleLocalIsServer()
     {
-        NetworkManager.SceneManager.OnLoadEventCompleted += (_, _, _, _) => HandleGameStartClient_Rpc(); 
-        
+        //once the scene has changed to the gameScene it'll trigger on all clients + the host: HandleGameStartClient_Rpc 
+        NetworkManager.SceneManager.OnLoadEventCompleted += (_, _, _, _) => HandleGameStartClient_Rpc();
+    }
+    
+    public static string GetFallbackUsername()
+    {
+        if(string.IsNullOrEmpty(noUsernameProvidedUsernameFallback)) noUsernameProvidedUsernameFallback = namePrefixWhenNameEmpty + Random.Range(1000, 5000).ToString();
+        return noUsernameProvidedUsernameFallback;
     }
 
     /// <summary>
@@ -69,28 +85,47 @@ public class GameManager : NetworkBehaviour
     /// <param name="obj"></param>
     private void HandleOnLocalClientConnected(ulong obj)
     {
-        //if (IsHost && playersNetList.Count > 0) return;
+        
+        //set the window name only if this is a runtime instance of the game
+#if UNITY_STANDALONE_WIN
+        IntPtr windowInt = WindowUtil.GetActiveWindow();
+        WindowUtil.SetWindowTitle(windowInt, $"Local Client Id: {NetworkManager.LocalClientId}");
+#endif
 
-        #if UNITY_STANDALONE_WIN
-            IntPtr windowInt = WindowUtil.GetActiveWindow();
-            WindowUtil.SetWindowTitle(windowInt, $"Local Client Id: {NetworkManager.LocalClientId}");
-        #endif
+        RuntimeMsg.Info("<color=green>You are connected!</color>", $"You have successfully connected to the server (id: {NetworkManager.ServerClientId}), your id is {NetworkManager.LocalClientId}");
 
-        RuntimeMsg.Info("You are connected!", $"You have successfully connected to the server (id: {NetworkManager.ServerClientId}), your id is {NetworkManager.LocalClientId}");
-
-        SignalConnectionToServer_Rpc(string.Empty, (int)pronouns.HEHIM, NetworkManager.LocalClientId);
-
+        //collect the local player info
+        localPlayerInfo = GetPlayerInfoFromForm();
+        //and send it to the server
+        SendPlayerInfoToServer_Rpc(localPlayerInfo.Name.ToString(), (int)localPlayerInfo.Pronouns, localPlayerInfo.playerId);
     }
+    
+    /// <summary>
+    /// Collect the player data from the handler of the network UI and return it 
+    /// </summary>
+    /// <returns>The local player's data</returns>
+    private playerInfo GetPlayerInfoFromForm()
+    {
+        playerInfo data = networkUIHandler.playerData;
+        data.playerId = NetworkManager.LocalClientId;
+        return data;
+    } 
 
     /// <summary>
-    /// Copies all elements from <c>playersNetList</c> to <c>playerDict</c>
+    /// Copies all elements from <c>playersNetList</c> to <c>playerDict</c>. Happens on both the host and the client at the same time.
     /// </summary>
     private void InitializePlayersDictionary()
     {
+        if (string.IsNullOrEmpty(localPlayerInfo.Name.ToString()))
+            localPlayerInfo.Name = noUsernameProvidedUsernameFallback;
+
+        SafeAddPlayerToDictionary(localPlayerInfo, localPlayerInfo.playerId);
 
         for (int i = 0; i < playersNetList.Count; i++)
         {
             playerInfo currentPlayer = playersNetList[i];
+            if (currentPlayer.playerId == localPlayerInfo.playerId) continue;
+
             RuntimeMsg.Info("Players syncing...", $"currentPlayer[{i}] == {currentPlayer.Name}");
             SafeAddPlayerToDictionary(currentPlayer, currentPlayer.playerId);
         }
@@ -107,20 +142,21 @@ public class GameManager : NetworkBehaviour
     private void HandleGameStartClient_Rpc()
     {
         RuntimeMsg.Info("Game Started!");
+        //first of all initialize the player's dictionary
         InitializePlayersDictionary();
+        
         HandleSpawnGameManagers();
         HandleDebugUIGeneration(inventoryUIManager);
     }
 
     private void HandleSpawnGameManagers()
     {
-        HandleScreenManager();
         HandleInventoryGeneration();
         HandleCardGeneration();
         HandleHealthGeneration();
         HandleAudioGeneration();
         HandleTagAssigner();
-        
+
 
         //here getting the setting the parent to the managersHolder
         for (int i = 0; i < managers.Count; i++)
@@ -141,6 +177,7 @@ public class GameManager : NetworkBehaviour
 
     }
 
+#region Managers Generation Handlers
     private void HandleTagAssigner()
     {
         if (!IsServer) return;
@@ -151,52 +188,43 @@ public class GameManager : NetworkBehaviour
     private void HandleAudioGeneration()
     {
         new GameObject("== Audio Manager ==");
-        //cardHandling.transform.SetParent(managersHolder.transform);
-
         managers.Add(Instantiate(audioManager.gameObject));
     }
 
-    #region Managers Generation Handlers
-    private void HandleScreenManager()
+    private GameObject HandleScreenManager()
     {
-        managers.Add(Instantiate(screensManager.gameObject));
+        GameObject screenManager = Instantiate(screensManager.gameObject);
+        managers.Add(screenManager);
+        return screenManager;
     }
 
     private void HandleHealthGeneration()
     {
-        GameObject healthHandling = new GameObject("== Health Handling ==");
-        //healthHandling.transform.SetParent(managersHolder.transform);
+        new GameObject("== Health Handling ==");
+
         if (IsServer)
         {
             managers.Add(Instantiate(healthManager.gameObject));
             managers[managers.Count - 1].GetComponent<NetworkBehaviour>().NetworkObject.Spawn();
         }
         managers.Add(Instantiate(healthUIManager.gameObject));
-        //        managers[managers.Count - 1].transform.SetParent(healthHandling.transform);
     }
 
     private void HandleCardGeneration()
     {
-        GameObject cardHandling = new GameObject("== Card Handling ==");
-        //cardHandling.transform.SetParent(managersHolder.transform);
+        new GameObject("== Card Handling ==");
 
         managers.Add(Instantiate(cardInteractionManager.gameObject));
-        //managers[managers.Count - 1].transform.SetParent(cardHandling.transform);
         managers.Add(Instantiate(cardGenerationManager.gameObject));
-        //managers[managers.Count - 1].transform.SetParent(cardHandling.transform);
     }
 
     private void HandleInventoryGeneration()
     {
-        GameObject inventoryHandling = new GameObject("== Inventory Handling ==");
-        //inventoryHandling.transform.SetParent(managersHolder.transform);
-
+        new GameObject("== Inventory Handling ==");
         managers.Add(Instantiate(inventoryManager.gameObject));
-        //managers[managers.Count - 1].transform.SetParent(inventoryHandling.transform);
 
         InventoryUIManager inventoryUiManager = Instantiate(inventoryUIManager.gameObject).GetComponent<InventoryUIManager>();
         managers.Add(inventoryUiManager.gameObject);
-        //managers[managers.Count - 1].transform.SetParent(inventoryHandling.transform);
     }
 
     private void HandleDebugUIGeneration(InventoryUIManager inventoryUIManager)
@@ -213,11 +241,12 @@ public class GameManager : NetworkBehaviour
     }
 
     #endregion
+    
     public static void ValidateInitialization() => coordinatedMonoBehaviourCount++;
 
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void SignalConnectionToServer_Rpc(string username, int pronouns, ulong senderId)
+    public void SendPlayerInfoToServer_Rpc(string username, int pronouns, ulong senderId)
     {
         ulong clientId = senderId;
         string cappedUsername = (username.Length > 61) ? username.Substring(0, 60) : username;
@@ -227,8 +256,7 @@ public class GameManager : NetworkBehaviour
         playerInfo playerInfo = new playerInfo()
         {
             //need to do this on the server as otherwise, in the case in which a player is without a name the random string wouldn't be syncronized
-            Name = string.IsNullOrEmpty(cappedUsername) ?
-                namePrefixWhenNameEmpty + Random.Range(1000, 5000).ToString() : cappedUsername,
+            Name = cappedUsername,
             Pronouns = (pronouns)pronouns,
             playerId = senderId
         };
@@ -254,7 +282,6 @@ public class GameManager : NetworkBehaviour
         }
 
         playersDict.Add(clientId, player);
-        //playerCount.Value = playersDict.Count;
 
         return true;
     }

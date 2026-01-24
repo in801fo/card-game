@@ -5,11 +5,13 @@ using System.Linq;
 using AYellowpaper.SerializedCollections;
 using UnityEngine;
 
-public class GameScreensManager : MonoBehaviour
+public class ScreensManager : MonoBehaviour
 {
     [SerializedDictionary("Screen Name", "Screen")]
     [SerializeField] private SerializedDictionary<string, GameObject> screens;
-    public static GameScreensManager Instance;
+    public static ScreensManager Instance;
+    public static Action<string> OnScreenClosure;
+    public static Action<KeyValuePair<string, GameObject>> OnScreenOpen;
     private static KeyValuePair<string, GameObject> currentScreen = new KeyValuePair<string, GameObject>(null, null);
 
     private void Awake()
@@ -18,7 +20,7 @@ public class GameScreensManager : MonoBehaviour
         else Destroy(this.gameObject);
     }
 
-    public GameObject SpawnScreen(string screenID)
+    public GameObject SpawnScreen<T>(string screenID)
     {
         //if another screen is being used or an instance of the requested screen is already on screen return a reference to it
         if (currentScreen.Value != null && screenID == currentScreen.Key) return currentScreen.Value;
@@ -27,7 +29,12 @@ public class GameScreensManager : MonoBehaviour
             screenID,
             Instantiate(screens[screenID], Vector3.zero, Quaternion.identity)
         );
-        
+
+        //ought'ta set the screen ID of the screen
+        currentScreen.Value.GetComponent<ScreenInitializer<T>>().screenID = screenID;
+
+        OnScreenOpen?.Invoke(currentScreen);
+
         return currentScreen.Value;
 
     }
@@ -40,7 +47,7 @@ public class GameScreensManager : MonoBehaviour
     /// <returns></returns>
     public PlayerConsequenceScreenHandler AskForPlayerGroup(int players, consequenceTarget target)
     {
-        SpawnScreen("playerConsequence");
+        SpawnScreen<playerConsequenceScreenInitializerStruct>("playerConsequence");
         currentScreen.Value.GetComponent<ScreenInitializer<playerConsequenceScreenInitializerStruct>>()
             .Initialize(new playerConsequenceScreenInitializerStruct()
                 {
@@ -49,9 +56,8 @@ public class GameScreensManager : MonoBehaviour
                     target = target,
                     maxCount = players
                 });
-        PlayerConsequenceScreenHandler screenHandler = currentScreen.Value.GetComponent<PlayerConsequenceScreenHandler>();
 
-        return screenHandler;
+        return currentScreen.Value.GetComponent<PlayerConsequenceScreenHandler>();
     }
 
     public PlayerConsequenceScreenHandler AskForSinglePlayer(consequenceTarget target)
@@ -61,6 +67,7 @@ public class GameScreensManager : MonoBehaviour
 
     public static void CloseCurrentScreen()
     {
+        OnScreenClosure?.Invoke(currentScreen.Key);
         Destroy(currentScreen.Value);
         currentScreen = new KeyValuePair<string, GameObject>();
     }

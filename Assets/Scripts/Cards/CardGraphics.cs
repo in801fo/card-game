@@ -56,7 +56,7 @@ public class CardGraphics : MonoBehaviour
     private void HandleAnimationState(Card card)
     {
         
-        if (card != null && card == this)
+        if (card != null && card == this.card)
         {
             animator.SetBool("up", true);
             animator.SetBool("down", false);

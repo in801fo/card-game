@@ -83,13 +83,13 @@ public class InventoryManager : CoordinatedMonoBehaviour
     /// </summary>
     /// <param name="card">The card to remove</param>
     /// <param name="removeFromHandDeck">If true, the spefified card will be removed from the hand deck otherwhise from the card deck</param>
-    public void RemoveCard(CardScriptable card, bool removeFromHandDeck = true)
+    public void RemoveCard(CardScriptable card, bool removeFromHandDeck = true, bool alert = true)
     {
 
         if (removeFromHandDeck)
         {
             handDeck.Remove(card);
-            OnCardRemovedFromHandDeck?.Invoke(card);
+            if(alert) OnCardRemovedFromHandDeck?.Invoke(card);
             if (handDeck.Count == 0) OnZeroCards?.Invoke();
             return;
         }
@@ -97,9 +97,9 @@ public class InventoryManager : CoordinatedMonoBehaviour
         sideDeck.Remove(card);
     }
 
-    public void RemoveCard(Card card, bool removeFromHandDeck = true)
+    public void RemoveCard(Card card, bool removeFromHandDeck = true, bool alert = true)
     {
-        RemoveCard(card.cardData, removeFromHandDeck);
+        RemoveCard(card.cardData, removeFromHandDeck, alert);
     }
 
     /// <summary>

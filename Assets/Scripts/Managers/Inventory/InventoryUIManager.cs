@@ -54,8 +54,6 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
         InventoryManager.OnGroupCardAddedToHandDeck += HandleGroupCardsAdded;
         InventoryManager.OnCardRemovedFromHandDeck += HandleCardRemoved;
 
-
-
         HandleCardGeneration();
     }
 
@@ -90,7 +88,6 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
 
         InventoryManager.Instance.AddCardAt(cardHolding.cardData, i, true);
         this.cards.Insert(i, cardGraphics);
-        //------------Move null coroutine to released position---------------
 
         HandleAnimateCards();
         currentCardHolded = null;
@@ -109,7 +106,7 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
         }
 
         //temporarily remove the card from the inventory 
-        InventoryManager.Instance.RemoveCard(cardGraphics.card);
+        InventoryManager.Instance.RemoveCard(cardGraphics.card, true, false);
         this.cards.Remove(cardGraphics);
         currentCardHolded = cardGraphics;
     }
@@ -281,9 +278,10 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
     private Vector3 CalculateCardTargetPosition(float borderStartX, int cardsBeforeCurrent)
     {
         //it's the offset from the worldStartSpawn
-        float halfHandDeck = InventoryManager.Instance.handDeck.Count / 2;
+        int halfHandDeck = InventoryManager.Instance.handDeck.Count / 2;
         float yOffset = (cards != null) ? Mathf.Abs(halfHandDeck - cardsBeforeCurrent) : 0;
         float y = worldStartSpawn.y - (yOffset * yCurveMultiplier);
+        
         //(worldStartSpawn.y - (1 * yCurveMultiplier)) is the y at which the card sitting at the (halfDeck + 1) position resides in the case in which the
         //count of cards in the handDeck is even
         //all that is required to surmount the difference in height between the two halves is the difference between the last and first card of the two halves

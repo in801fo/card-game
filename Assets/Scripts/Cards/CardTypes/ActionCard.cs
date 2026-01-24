@@ -40,7 +40,7 @@ public class ActionCard : Card
                                                                                     .ToArray());
                 break;
             case consequenceTarget.SPECIFIC_SINGLE:
-                GameScreensManager.Instance.AskForSinglePlayer(cardData.consequenceTarget);
+                ScreensManager.Instance.AskForSinglePlayer(cardData.consequenceTarget);
                 PlayerConsequenceScreenHandler.OnDoneDeciding += HandleLowerHpServerSingle;
                 break;
             default:
@@ -63,7 +63,7 @@ public class ActionCard : Card
     private void HandleRequestForSpecificGroup()
     {
         if (cardData.numberOfAffectedPlayers > 0)
-            handleToPlayerConsequenceScreen = GameScreensManager.Instance.AskForPlayerGroup(cardData.numberOfAffectedPlayers, cardData.consequenceTarget);
+            handleToPlayerConsequenceScreen = ScreensManager.Instance.AskForPlayerGroup(cardData.numberOfAffectedPlayers, cardData.consequenceTarget);
         else HpManager.Instance.HandleAffectedTagsServer_Rpc(cardData.affectedTags, cardData.damageAmount, cardData.Heals);
     }
 

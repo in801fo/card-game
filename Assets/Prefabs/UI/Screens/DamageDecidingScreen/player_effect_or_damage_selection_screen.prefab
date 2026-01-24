@@ -766,7 +766,7 @@ GameObject:
   - component: {fileID: 2364233140892577722}
   - component: {fileID: 9064574243155670528}
   m_Layer: 5
-  m_Name: PlayerEffectOrDamageSelectionScreen
+  m_Name: player_effect_or_damage_selection_screen
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

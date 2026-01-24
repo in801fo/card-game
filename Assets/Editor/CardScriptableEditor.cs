@@ -7,7 +7,6 @@ using UnityEditor;
 using UnityEditor.Rendering;
 using UnityEngine;
 
-//TODO figlio di puttana i valori si azzerano non appena unity si riavvia, fixa urgentemente
 [CustomEditor(typeof(CardScriptable)), CanEditMultipleObjects]
 public class CardScriptableEditor : Editor
 {

@@ -55,7 +55,7 @@ public class PlayerConsequenceScreenHandler : MonoBehaviour
             OnDoneDeciding?.Invoke(players.Keys.ToList());
             //not subscribing GameScreensManager to OnDoneDeciding as that would decrease modularity
             //and also entanglement between classes (which is no good!)
-            GameScreensManager.CloseCurrentScreen();
+            ScreensManager.CloseCurrentScreen();
         }
         else RuntimeMsg.Warning("Not enough players selected!");
     }

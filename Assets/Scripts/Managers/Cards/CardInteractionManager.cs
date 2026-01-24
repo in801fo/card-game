@@ -1,6 +1,5 @@
 using System;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 public class CardInteractionManager : MonoBehaviour
 {
@@ -21,7 +20,7 @@ public class CardInteractionManager : MonoBehaviour
     /// <para><i>In the previous check, was the player holding the card to change its position in the deck?</i></para>
     /// Need this to decide if the player has pressed the card with the intention of using it or if to just change its position in the hand deck
     /// </summary>
-    private bool wasHolding;
+    private bool isHolding;
 
     private float timePressedMouse0Down;
 
@@ -37,7 +36,7 @@ public class CardInteractionManager : MonoBehaviour
         if (Input.GetKeyUp(KeyCode.Mouse0))
         {
 
-            if (!wasHolding)
+            if (!isHolding)
                 UseCurrentlySelectedCard();
             else
                 HandleCardRelease();
@@ -46,14 +45,14 @@ public class CardInteractionManager : MonoBehaviour
             timePressedMouse0Down = 0;
 
             currentSelected = null;
-            wasHolding = false;
+            isHolding = false;
         }
 
 
         if (Input.GetKey(KeyCode.Mouse0))
         {
             //TODO: clean this shit
-            if (!wasHolding)
+            if (!isHolding)
             {
                 if (RaycastForCard())
                 {
@@ -70,9 +69,9 @@ public class CardInteractionManager : MonoBehaviour
                 if (timePressedMouse0Down > minTimeHold)
                 {
                     OnCardHold?.Invoke(currentSelected);
-                    wasHolding = true;
+                    isHolding = true;
                 }
-                else wasHolding = false;
+                else isHolding = false;
             }
         }
 
@@ -93,7 +92,7 @@ public class CardInteractionManager : MonoBehaviour
             hoverCoolDown -= Time.deltaTime;
         if (hoverCoolDown < 0) hoverCoolDown = 0;
 
-        if (!wasHolding)
+        if (!isHolding)
         {
             //1) save the previous value of currentCardHover
             Card beforeCardHover = currentCardHover;
@@ -102,7 +101,8 @@ public class CardInteractionManager : MonoBehaviour
 
             if (currentCardHover == null && beforeCardHover != null) hoverCoolDown = 0.3f; 
             
-            if (beforeCardHover != currentCardHover) OnCardCursorHover?.Invoke(currentCardHover);
+            if (beforeCardHover != currentCardHover && currentCardHover != null) 
+                OnCardCursorHover?.Invoke(currentCardHover);
         }
     }
 
@@ -137,7 +137,7 @@ public class CardInteractionManager : MonoBehaviour
 
     private void GetCardInfoScreen(Card card)
     {
-        GameObject screen = GameScreensManager.Instance.SpawnScreen("cardInfo");
+        GameObject screen = ScreensManager.Instance.SpawnScreen<Card>("cardInfo");
         ScreenInitializer<Card> screenInitializer = screen.GetComponent<ScreenInitializer<Card>>();
         if(screenInitializer != null)
             screenInitializer.Initialize(card);
