@@ -12,39 +12,54 @@ public class NetworkUIHandler : MonoBehaviour
     private GameObject playerDataForm;
 
     public static Action OnGameStart;
-    public playerInfo playerData { get; private set; }
+    public playerInfo playerData { get; private set; } = new playerInfo();
 
     private Canvas networkCanvas;
 
     private void Awake()
     {
         
+        //prepare the buttons
         hostButton.onClick.AddListener(HandleHost);
         clientButton.onClick.AddListener(HandleClient);
         startGameButton.onClick.AddListener(HandleStartGame);
         openPlayerDataFormButton.onClick.AddListener(HandleShowDataForm);
         networkCanvas = GetComponent<Canvas>();
+
+
+        //Had to do it static because when i tried to subscribe to the event called by the
+        //instance of the PlayerDataFormScreen the data for the pronoun toggle group was not updated
+        //this is because, internally to the PlayerDataFormScreen, the instance is deleted right after
+        //calling the event OnGetPlayerDataOnScreenClosure, and I think this is what caused the data to get
+        //eliminated/lost
+        PlayerDataFormScreen.OnGetPlayerDataOnScreenClosure += CollectLocalPlayerData;
+        PlayerDataFormScreen.OnGetPlayerDataOnScreenClosure += (_) => ShowNetworkButtons();
+
+        //hides the buttons and shows the player data form
         HandleShowDataForm();
-        PlayerDataFormScreen playerDataFormHandle = playerDataForm.GetComponent<PlayerDataFormScreen>();
-        playerDataFormHandle.Initialize(-1);
-        playerDataFormHandle.OnGetPlayerDataOnScreenClosure += CollectLocalPlayerData;
-        playerDataFormHandle.OnGetPlayerDataOnScreenClosure += (_) => ShowNetworkButtons();
 
     }
 
+    /// <summary>
+    /// Method which shows the player data form
+    /// </summary>
     private void HandleShowDataForm()
     {
         HideNetworkButtons();
         startGameButton.gameObject.SetActive(false);
-        if (playerDataForm) playerDataForm.gameObject.SetActive(true);
+        if (playerDataForm != null) playerDataForm.gameObject.SetActive(true);
         else
         {
-            playerDataForm = ScreensManager.Instance.SpawnScreen<int>("playerDataForm");
+            playerDataForm = ScreensManager.Instance.SpawnScreen<playerInfo>("playerDataForm");
+            playerDataForm.GetComponent<PlayerDataFormScreen>().Initialize(playerData);
             playerDataForm.transform.SetParent(networkCanvas.transform);
             playerDataForm.transform.localPosition = Vector3.zero;
         }
     }
-
+    
+    /// <summary>
+    /// Method that executes once the Start Game button is pressed by the host
+    /// </summary>
     private void HandleStartGame()
     {
         if (GameManager.playersDict.Count < 2)

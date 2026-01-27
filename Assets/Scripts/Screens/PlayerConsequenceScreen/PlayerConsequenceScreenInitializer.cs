@@ -12,7 +12,6 @@ public class PlayerConsequenceScreenInitializer : ScreenInitializer<playerConseq
     [SerializeField] private GameObject playerListContentGO;
     [SerializeField] private Button doneButton;
     
-
     public override void Initialize(playerConsequenceScreenInitializerStruct initializingValues)
     {
         SetScreenHeading(initializingValues.screenHeading);

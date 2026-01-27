@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using AYellowpaper.SerializedCollections;
+using Unity.PlasticSCM.Editor.WebApi;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class ScreensManager : MonoBehaviour
@@ -12,7 +14,10 @@ public class ScreensManager : MonoBehaviour
     public static ScreensManager Instance;
     public static Action<string> OnScreenClosure;
     public static Action<KeyValuePair<string, GameObject>> OnScreenOpen;
+    public static Action<string> OnScreenHide;
+
     private static KeyValuePair<string, GameObject> currentScreen = new KeyValuePair<string, GameObject>(null, null);
+
 
     private void Awake()
     {
@@ -68,7 +73,12 @@ public class ScreensManager : MonoBehaviour
     public static void CloseCurrentScreen()
     {
         OnScreenClosure?.Invoke(currentScreen.Key);
-        Destroy(currentScreen.Value);
         currentScreen = new KeyValuePair<string, GameObject>();
+    }
+
+    public static void OnHideCurrentScreen()
+    {
+        OnScreenHide?.Invoke(currentScreen.Key);
+        currentScreen.Value.GetComponent<Renderer>().enabled = false;
     }
 }

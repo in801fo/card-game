@@ -20,7 +20,7 @@ public class TagHandler
     {
         List<playerTagsEnum> playerTags = new List<playerTagsEnum>();
         //tmp
-        string tmp = "";
+        //string tmp = "";
         for (int i = 0; i < 16; i++)
         {
             /*
@@ -28,7 +28,7 @@ public class TagHandler
                 and checking if at the i-th position there is a 1 (doinf the & (AND)).
             */
             if ((mask & (1 << i)) != 0) playerTags.Add((playerTagsEnum)(1 << i));
-            if ((mask & (1 << i)) != 0) tmp += $" {(playerTagsEnum)(1 << i)}";
+            //if ((mask & (1 << i)) != 0) tmp += $" {(playerTagsEnum)(1 << i)}";
         }
 
         return playerTags;

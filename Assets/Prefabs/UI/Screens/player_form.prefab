@@ -494,6 +494,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8103334070538527443}
   - component: {fileID: 4390520651232379703}
+  - component: {fileID: 5813795865257508462}
   m_Layer: 5
   m_Name: Lui
   m_TagString: Untagged
@@ -534,6 +535,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b79ad35422170eb4da20185a33e9080c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PronounToggle
+  <representingPronoun>k__BackingField: 1
+--- !u!114 &5813795865257508462
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1302712583609551349}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9085046f02f69544eb97fd06b6048fe2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Toggle
   m_Navigation:
     m_Mode: 3
     m_WrapAround: 0
@@ -570,7 +584,6 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_IsOn: 0
-  <representingPronoun>k__BackingField: 1
 --- !u!1 &1422617393977301857
 GameObject:
   m_ObjectHideFlags: 0
@@ -609,7 +622,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00082251563}
+  m_AnchoredPosition: {x: 0, y: -0.000976626}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &2825090074288552326
@@ -799,6 +812,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7262030298056312543}
   - component: {fileID: 1713557954919984625}
+  - component: {fileID: 2076946268549671898}
   m_Layer: 5
   m_Name: Loro
   m_TagString: Untagged
@@ -839,6 +853,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b79ad35422170eb4da20185a33e9080c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PronounToggle
+  <representingPronoun>k__BackingField: 2
+--- !u!114 &2076946268549671898
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2330493867465574268}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9085046f02f69544eb97fd06b6048fe2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Toggle
   m_Navigation:
     m_Mode: 3
     m_WrapAround: 0
@@ -875,7 +902,6 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_IsOn: 0
-  <representingPronoun>k__BackingField: 2
 --- !u!1 &2724231767063268554
 GameObject:
   m_ObjectHideFlags: 0
@@ -1395,7 +1421,7 @@ MonoBehaviour:
   <closeButton>k__BackingField: {fileID: 7593688119943467862}
   <screenHeading>k__BackingField: {fileID: 2135574417317952703}
   screenHeadingText: Insert Player Data
-  usernameField: {fileID: 7851374911571708096}
+  usernameField: {fileID: 5668205795892570869}
   Warning: {fileID: 117456804046861612}
   pronounsToggleGroup: {fileID: 8447996828851237374}
 --- !u!1 &3716645340324996048
@@ -2366,7 +2392,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.0000076294, y: -19.514}
+  m_AnchoredPosition: {x: -0, y: -19.514}
   m_SizeDelta: {x: 76.1132, y: 19.0283}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &129467382849561386
@@ -2478,6 +2504,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5893378892268527430}
   - component: {fileID: 1091086576211587357}
+  - component: {fileID: 8050167799288360698}
   m_Layer: 5
   m_Name: Lei
   m_TagString: Untagged
@@ -2518,6 +2545,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b79ad35422170eb4da20185a33e9080c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PronounToggle
+  <representingPronoun>k__BackingField: 0
+--- !u!114 &8050167799288360698
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6314247539553521696}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9085046f02f69544eb97fd06b6048fe2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Toggle
   m_Navigation:
     m_Mode: 3
     m_WrapAround: 0
@@ -2554,7 +2594,6 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_IsOn: 0
-  <representingPronoun>k__BackingField: 0
 --- !u!1 &7488773707549017996
 GameObject:
   m_ObjectHideFlags: 0
@@ -2750,7 +2789,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 8261216804458648640}
   m_HandleRect: {fileID: 3803809075715514521}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:

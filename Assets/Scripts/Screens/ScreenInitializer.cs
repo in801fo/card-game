@@ -38,6 +38,7 @@ public class ScreenInitializer<T> : MonoBehaviour
     {
         if (closeButton != null) closeButton.onClick.AddListener(ScreensManager.CloseCurrentScreen);
         else RuntimeMsg.Warning($"No close button instance was provided for screen {this.name}");
+        ScreensManager.OnScreenClosure += HandleClosureCheck;
 
         SetScreenHeading(string.Empty, false);
     }
@@ -58,5 +59,24 @@ public class ScreenInitializer<T> : MonoBehaviour
     public virtual void Initialize(T initializingValues)
     {
         hasInitialized = true;
+    }
+
+    /// <summary>
+    /// Override this method if you want to do stuff before the screen closure
+    /// </summary>
+    protected virtual void HandleClosure()
+    {
+        Destroy(gameObject);
+    }
+
+    protected void HandleClosureCheck(string id)
+    {
+        if (id != _screenID) return;
+        HandleClosure();
+    }
+
+    protected void OnDestroy()
+    {
+        ScreensManager.OnScreenClosure -= HandleClosureCheck;
     }
 }

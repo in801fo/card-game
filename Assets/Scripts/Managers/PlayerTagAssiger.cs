@@ -4,6 +4,10 @@ using System.Linq;
 using Unity.Collections;
 using Unity.Netcode;
 
+/// <summary>
+/// Handles assigning the player with tags required to do some stuff to only players which satisfy specific requirements.
+/// <para>The checks are done on the server</para>
+/// </summary>
 public class PlayerTagAssigner : NetworkBehaviour
 {
 
@@ -25,11 +29,11 @@ public class PlayerTagAssigner : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    private void HandleHasMeridioneServer_Rpc(ulong caller, cardTypeEnum Type, FixedString64Bytes Name)
+    private void CheckHasMeridioneServer_Rpc(ulong caller, cardTypeEnum Type, FixedString64Bytes Name)
     {
         if (Type == cardTypeEnum.CHARACTER &&
             southerners.Contains(Name.ToString()))
-            AssignTagClient_Rpc(caller, playerTagsEnum.HAS_MERIDIONE);
+               AssignTagClient_Rpc(caller, playerTagsEnum.HAS_MERIDIONE);
     }
 
     [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
@@ -42,6 +46,6 @@ public class PlayerTagAssigner : NetworkBehaviour
     private void HandleHasMeridione(CardScriptable scriptable)
     {
         FixedString64Bytes scriptableName = new FixedString64Bytes(scriptable.Name);
-        HandleHasMeridioneServer_Rpc(NetworkManager.LocalClientId, scriptable.Type, scriptableName);
+        CheckHasMeridioneServer_Rpc(NetworkManager.LocalClientId, scriptable.Type, scriptableName);
     }
 }

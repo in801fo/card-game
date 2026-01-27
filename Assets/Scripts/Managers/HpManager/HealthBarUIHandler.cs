@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -30,6 +31,7 @@ public class HealthBarUIHandler : MonoBehaviour
 
         HpManager.OnHealthChange += HandleCheckHealthChange;
         HpManager.OnHealthZero += HandleCheckLifeZero;
+        HpUIManager.OnHandleHpPlayerDisconnect += HandlePlayerDisconnect;
     }
 
     private void HandleCheckLifeZero(ulong playerId)
@@ -40,7 +42,7 @@ public class HealthBarUIHandler : MonoBehaviour
     public void Initialize(playerInfo? info)
     {
         _myPlayer = info;
-        if (!_myPlayer.HasValue)
+        /*if (!_myPlayer.HasValue)
         {
             RuntimeMsg.Warning("_myPlayer value not defined", "Value for player not specified therefore I generated a random string of number as identifier for player...");
             _myPlayer = new playerInfo
@@ -58,7 +60,7 @@ public class HealthBarUIHandler : MonoBehaviour
                 Pronouns = _myPlayer.Value.Pronouns,
                 playerId = _myPlayer.Value.playerId
             };
-        }
+        }*/
 
 
         playerNameSpace.SetText(_myPlayer.Value.Name.ToString());
@@ -82,13 +84,30 @@ public class HealthBarUIHandler : MonoBehaviour
             RuntimeMsg.Warning("Trying to change life points after player death.");
             return;
         }
-        
+
         //proportion
         float toApply = initialPreferredSize / HpManager.maxHp * amount;
-        
+
         if (healthBarLayoutElement.preferredWidth + toApply <= 0) Destroy(healthBarLayoutElement.gameObject);
         if (healthBarLayoutElement.preferredWidth + toApply >= initialPreferredSize) toApply = initialPreferredSize - healthBarLayoutElement.preferredWidth;
         healthBarLayoutElement.preferredWidth += toApply;
+    }
+    
+    private void HandlePlayerDisconnect(ulong playerId)
+    {
+        if (playerId != _myPlayer.Value.playerId) return;
+
+        //TODO: make it so that if the player manages to reconnect after disconnection their health is saved
+        Destroy(healthBarLayoutElement);
+        playerNameSpace.SetText(playerNameSpace.text + ": Disconnected (Bummer)");
+
+        HandleUnsubscribeHpEvents();
+    }
+
+    private void HandleUnsubscribeHpEvents()
+    {
+        HpManager.OnHealthChange -= HandleCheckHealthChange;
+        HpManager.OnHealthZero -= HandleCheckLifeZero;
     }
 
     private void HandlePlayerDeath()
