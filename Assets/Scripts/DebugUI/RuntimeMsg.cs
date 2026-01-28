@@ -3,13 +3,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
 using System.Linq;
 using System.Data;
 using System.Diagnostics;
-using Button = UnityEngine.UI.Button;
-using Unity.VisualScripting;
 
 enum errorType
 {

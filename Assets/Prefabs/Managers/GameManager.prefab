@@ -45,7 +45,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2179887656
+  GlobalObjectIdHash: 1733936616
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -79,7 +79,7 @@ MonoBehaviour:
   cardInteractionManager: {fileID: 7329309651390638999, guid: 726692b8043db0240bdfe546c7f094d3, type: 3}
   healthManager: {fileID: 9019541580210870312, guid: 916fe90deaa9daf459827bca3bcecba8, type: 3}
   healthUIManager: {fileID: 4183306118934384413, guid: b322f22bff0c3d74abf702aecd55ce2d, type: 3}
-  networkUIHandler: {fileID: 6481871046708386260, guid: 29a717ac55691b2478a22e2b29950f19, type: 3}
-  networkManager: {fileID: 6578108104356264235, guid: 3c06aafcc59f34142b23bcf0131a9fb9, type: 3}
   playerTagAssigner: {fileID: 558722634936090784, guid: 4e9669b9c3f792746a214d98ba80609e, type: 3}
   audioManager: {fileID: 5492879894825478014, guid: 4d2741658ec08374ba94c55a0b287e74, type: 3}
+  networkManager: {fileID: 6578108104356264235, guid: 3c06aafcc59f34142b23bcf0131a9fb9, type: 3}
+  networkUI: {fileID: 0}

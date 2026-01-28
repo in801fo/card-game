@@ -26,4 +26,5 @@ MonoBehaviour:
   <maxCardUsages>k__BackingField: 1
   affectedTags: 01000000
   <hasSoundEffect>k__BackingField: 1
-  <onUseSoundEffect>k__BackingField: {fileID: 8300000, guid: 209554b67dca12c4f9803ea3796dbdd8, type: 3}
+  onUseSoundEffect:
+  - {fileID: 8300000, guid: 209554b67dca12c4f9803ea3796dbdd8, type: 3}

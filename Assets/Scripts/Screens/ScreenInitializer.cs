@@ -36,7 +36,7 @@ public class ScreenInitializer<T> : MonoBehaviour
 
     protected virtual void Awake()
     {
-        if (closeButton != null) closeButton.onClick.AddListener(ScreensManager.CloseCurrentScreen);
+        if (closeButton != null) closeButton.onClick.AddListener(() => ScreensManager.CloseScreen(_screenID));
         else RuntimeMsg.Warning($"No close button instance was provided for screen {this.name}");
         ScreensManager.OnScreenClosure += HandleClosureCheck;
 

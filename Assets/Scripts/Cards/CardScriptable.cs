@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "NewCard", menuName = "Create New Card")]
@@ -23,6 +24,6 @@ public class CardScriptable : ScriptableObject
     //I KNOW I KNOW IT'S BAD BUT UNITY'S WORSE WITH ITS SHITTY ASS SERIALIZATION, FORGIVE ME FATHER T_T
     [SerializeField] public playerTagsEnum[] affectedTags;
     [field: SerializeField] public bool hasSoundEffect { get; private set; }
-    [field: SerializeField] public AudioClip onUseSoundEffect { get; private set; }
+    [field: SerializeField] public AudioClip[] onUseSoundEffect;
 
 }

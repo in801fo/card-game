@@ -98,7 +98,7 @@ public class HealthBarUIHandler : MonoBehaviour
         if (playerId != _myPlayer.Value.playerId) return;
 
         //TODO: make it so that if the player manages to reconnect after disconnection their health is saved
-        Destroy(healthBarLayoutElement);
+        Destroy(healthBarLayoutElement.gameObject);
         playerNameSpace.SetText(playerNameSpace.text + ": Disconnected (Bummer)");
 
         HandleUnsubscribeHpEvents();

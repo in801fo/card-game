@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Netcode;
+using UnityEngine;
 
 public class ActionCard : Card
 {
@@ -14,9 +15,6 @@ public class ActionCard : Card
         if (handleToPlayerConsequenceScreen != null)
             //do this...
             PlayerConsequenceScreenHandler.OnDoneDeciding += HandleReadyToUse;
-        else //otherwise...
-            HandleReadyToUse();
-
     }
 
     public void DecideDamageArea()
@@ -26,21 +24,27 @@ public class ActionCard : Card
         {
             case consequenceTarget.LOCAL:
                 HpManager.Instance.LowerHpServer_Rpc(cardData.damageAmount, NetworkManager.Singleton.LocalClientId);
+
+                HandleReadyToUse(new List<ulong> { GameManager.localPlayerInfo.playerId });
                 break;
             case consequenceTarget.ALL_EX:
-                HpManager.Instance.LowerHpSpecificGroupServer_Rpc(cardData.damageAmount, GameManager.playersDict.Values
-                                                                                    .Select((playerInfo info) => info.playerId)
+                HpManager.Instance.LowerHpSpecificGroupServer_Rpc(cardData.damageAmount, GameManager.playersDict.Keys
                                                                                     .ToArray()
-                                                                                    .Where((ulong id) => id != NetworkManager.Singleton.LocalClientId).ToArray());
+                                                                                    .Where((ulong id) => id != NetworkManager.Singleton.LocalClientId)
+                                                                                    .ToArray());
+                
+                HandleReadyToUse(GameManager.playersDict.Keys
+                                            .Where((ulong id) => id != NetworkManager.Singleton.LocalClientId)
+                                            .ToList());
                 break;
             case consequenceTarget.ALL_INC:
-                HpManager.Instance.LowerHpSpecificGroupServer_Rpc(cardData.damageAmount, GameManager.playersDict.Values
-                                                                                    .ToArray()
-                                                                                    .Select((playerInfo info) => info.playerId)
+                HpManager.Instance.LowerHpSpecificGroupServer_Rpc(cardData.damageAmount, GameManager.playersDict.Keys
                                                                                     .ToArray());
+                HandleReadyToUse(GameManager.playersDict.Keys.ToList());
                 break;
             case consequenceTarget.SPECIFIC_SINGLE:
-                ScreensManager.Instance.AskForSinglePlayer(cardData.consequenceTarget);
+
+                PlayerConsequenceScreenInitializer.AskForSinglePlayer(cardData.consequenceTarget);
                 PlayerConsequenceScreenHandler.OnDoneDeciding += HandleLowerHpServerSingle;
                 break;
             default:
@@ -50,21 +54,25 @@ public class ActionCard : Card
         }
     }
 
-    private void HandleReadyToUse(List<ulong> _ = null)
+    private void HandleReadyToUse(List<ulong> affectedPlayers = null)
     {
         ReduceCardUse();
         if (cardData.cardEffects != null && cardData.cardEffects.Length != 0)
-            EffectManager.ApplyEffects(cardData.cardEffects.ToList());
+            EffectManager.Instance.RequestApplyEffectServer_Rpc(affectedPlayers.ToArray(), cardData.cardEffects);
         if (cardData.hasSoundEffect) 
-            AudioManager.PlayCardSFX(cardData.onUseSoundEffect);
+            AudioManager.Instance.RequestPlayCardSFXServer_Rpc(Random.Range(0, cardData.onUseSoundEffect.Length), cardData.name);
         OnCardUseReady?.Invoke(this);
     }
 
     private void HandleRequestForSpecificGroup()
     {
         if (cardData.numberOfAffectedPlayers > 0)
-            handleToPlayerConsequenceScreen = ScreensManager.Instance.AskForPlayerGroup(cardData.numberOfAffectedPlayers, cardData.consequenceTarget);
-        else HpManager.Instance.HandleAffectedTagsServer_Rpc(cardData.affectedTags, cardData.damageAmount, cardData.Heals);
+            handleToPlayerConsequenceScreen = PlayerConsequenceScreenInitializer.AskForPlayerGroup(cardData.numberOfAffectedPlayers, cardData.consequenceTarget);
+        else
+        {
+            HpManager.Instance.HandleAffectedTagsServer_Rpc(cardData.affectedTags, cardData.damageAmount, cardData.Heals);
+            HandleReadyToUse();
+        }
     }
 
     private void HandleLowerHpServerSingle(List<ulong> playerIds)

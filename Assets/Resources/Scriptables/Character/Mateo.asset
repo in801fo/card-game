@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardScriptable
   <Name>k__BackingField: Mateo
   <Sprite>k__BackingField: {fileID: 0}
-  <Description>k__BackingField: 
+  <Description>k__BackingField: '"Ma tu li usi gli schemi?"'
   <Type>k__BackingField: 1
   <consequenceTarget>k__BackingField: 0
   <numberOfAffectedPlayers>k__BackingField: 0

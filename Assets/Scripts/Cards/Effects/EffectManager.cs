@@ -2,15 +2,24 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Unity.Netcode;
 
-public static class EffectManager
+public class EffectManager : NetworkBehaviour
 {
+
+    public static EffectManager Instance { get; private set; }
 
     private static Dictionary<effectsEnum, Type> effectsDict = new Dictionary<effectsEnum, Type>()
     {
         {effectsEnum.BLINDNESS, typeof(Blindness)},
         {effectsEnum.CONFUSION, typeof(Confusion)}
     };
+
+    public override void OnNetworkSpawn()
+    {
+        if (Instance == null) Instance = this;
+        else Destroy(Instance);
+    }
 
     private static void DoIt(effectsEnum effect)
     {
@@ -25,11 +34,31 @@ public static class EffectManager
         applyMethod.Invoke(null, null);
     }
 
-    public static void ApplyEffects(List<effectsEnum> effects)
+    [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
+    public void ApplyEffectsClient_Rpc(ulong[] players, effectsEnum[] effects)
     {
-        for (int i = 0; i < effects.Count; i++)
+        if (!players.Contains(NetworkManager.Singleton.LocalClientId)) return;
+
+        for (int i = 0; i < effects.Length; i++)
         {
             DoIt(effects[i]);
         }
     }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void RequestApplyEffectServer_Rpc(ulong[] affectedPlayers, effectsEnum[] effects)
+    {
+        for (int i = 0; i < affectedPlayers.Length; i++)
+        {
+            if (!GameManager.playersDict.ContainsKey(affectedPlayers[i]))
+            {
+                RuntimeMsg.Warning($"PlayerId: {affectedPlayers[i]} not found while applying effects");
+                continue;
+            }
+
+            ApplyEffectsClient_Rpc(affectedPlayers, effects);
+        }
+    }
+
+
 }

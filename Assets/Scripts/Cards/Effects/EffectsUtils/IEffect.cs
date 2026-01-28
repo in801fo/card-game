@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 public interface IEffect
 {
@@ -12,21 +13,12 @@ public interface IEffect
     /// </summary>
     public static int turnDuration { get; set; }
 
-    public static Action<consequenceTarget, int, float, effectsEnum> OnEffectApplied { get; set; }
-    public static consequenceTarget target { get; set; }
-
+    public static Action<List<ulong>, int, float, effectsEnum> OnEffectApplied { get; set; }
     public static effectsEnum effectAsEnum { get; set; }
 
-    public static void Apply()
+    public static void Apply(List<ulong> playerIds)
     {
-        RuntimeMsg.Info("Applied Effect!", $"Effect {effectAsEnum} applied!");
-        OnEffectApplied?.Invoke(target, turnDuration, secondsDuration, effectAsEnum);
+        OnEffectApplied?.Invoke(playerIds, turnDuration, secondsDuration, effectAsEnum);
     }
 
-    /*public List<Player> GetEffectArea(){
-
-        code to return the right list of affected entities
-    
-    }
-    */
 }

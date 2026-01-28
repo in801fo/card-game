@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Netcode;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -93,6 +94,31 @@ public class PlayerConsequenceScreenInitializer : ScreenInitializer<playerConseq
             //make it so the player cannot un-tick themselves
             currentPlayerEntry.SetInteractability(false);
         }
+    }
+
+    /// <summary>
+    /// Creates a UI screen to ask the player which players to damage
+    /// </summary>
+    /// <param name="localExclusive">Should the local player be excluded from the damage</param>
+    /// <returns></returns>
+    public static PlayerConsequenceScreenHandler AskForPlayerGroup(int players, consequenceTarget target)
+    {
+        GameObject screen = ScreensManager.Instance.SpawnScreen<playerConsequenceScreenInitializerStruct>("playerConsequence");
+        screen.GetComponent<ScreenInitializer<playerConsequenceScreenInitializerStruct>>()
+            .Initialize(new playerConsequenceScreenInitializerStruct()
+            {
+                playersInfo = GameManager.playersDict.Values.ToList(),
+                screenHeading = $"Select {players} players ({players} left)",
+                target = target,
+                maxCount = players
+            });
+
+        return screen.GetComponent<PlayerConsequenceScreenHandler>();
+    }
+
+    public static PlayerConsequenceScreenHandler AskForSinglePlayer(consequenceTarget target)
+    {
+        return AskForPlayerGroup(1, target);
     }
 }
 

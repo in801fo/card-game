@@ -24,4 +24,4 @@ MonoBehaviour:
   <maxCardUsages>k__BackingField: 1
   affectedTags: 
   <hasSoundEffect>k__BackingField: 0
-  <onUseSoundEffect>k__BackingField: {fileID: 0}
+  onUseSoundEffect: []

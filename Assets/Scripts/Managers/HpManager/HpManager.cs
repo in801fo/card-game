@@ -155,8 +155,8 @@ public class HpManager : NetworkBehaviour
         {
             foreach (playerInfo player in players)
             {
-                List<playerTagsEnum> playerTagsEnums = TagHandler.ExtractPlayerTagsFromMask(player.playerTagsMask);
-                if (playerTagsEnums.Contains(affectedTags[i])) HandleDamageOrHealServer(amount, player.playerId, cardHeals);
+                List<playerTagsEnum> currentPlayerTagsEnums = TagHandler.ExtractPlayerTagsFromMask(player.playerTagsMask);
+                if (currentPlayerTagsEnums.Contains(affectedTags[i])) { HandleDamageOrHealFromServer(amount, player.playerId, cardHeals); }
             }
         }
     }
@@ -164,7 +164,7 @@ public class HpManager : NetworkBehaviour
     ///<summary> Decides wether the damage inflicted is actually an amount of hps to give to the specified player, 
     /// or just a damage amount, all based on the sign of the provided damage
     /// </summary>     
-    private void HandleDamageOrHealServer(float damage, ulong affected, bool heals)
+    private void HandleDamageOrHealFromServer(float damage, ulong affected, bool heals)
     {
         if (heals) IncrementHpServer_Rpc(damage, affected);
         else LowerHpServer_Rpc(damage, affected);

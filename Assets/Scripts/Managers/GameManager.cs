@@ -1,9 +1,8 @@
-using System;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using Random = UnityEngine.Random;
-
+using System;
 public class GameManager : NetworkBehaviour
 {
     [SerializeField] private DebugUIManager debugUIManager;
@@ -36,7 +35,7 @@ public class GameManager : NetworkBehaviour
     /// </summary>
     private NetworkList<playerInfo> playersNetList = new NetworkList<playerInfo>(null, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
-    private static playerInfo localPlayerInfo;
+    public static playerInfo localPlayerInfo { get; private set; }
 
     /// <summary>
     /// Stores the player username if no username was provided on load
@@ -207,9 +206,11 @@ public class GameManager : NetworkBehaviour
         HandleInventoryGeneration();
         HandleCardGeneration();
         HandleHealthGeneration();
-        HandleAudioGeneration();
-        HandleTagAssigner();
-
+        if (IsServer)
+        {
+            HandleAudioGeneration();
+            HandleTagAssigner();
+        }
 
         //here getting the setting the parent to the managersHolder
         for (int i = 0; i < managers.Count; i++)
@@ -240,7 +241,7 @@ public class GameManager : NetworkBehaviour
 
     private void HandleTagAssigner()
     {
-        if (!IsServer) return;
+        
         managers.Add(Instantiate(playerTagAssigner.gameObject));
         managers[managers.Count - 1].GetComponent<NetworkBehaviour>().NetworkObject.Spawn();
     }
@@ -248,7 +249,10 @@ public class GameManager : NetworkBehaviour
     private void HandleAudioGeneration()
     {
         new GameObject("== Audio Manager ==");
-        managers.Add(Instantiate(audioManager.gameObject));
+        
+        NetworkBehaviour man = Instantiate(audioManager.gameObject).GetComponent<NetworkBehaviour>();
+        man.NetworkObject.Spawn();
+        managers.Add(man.gameObject);
     }
 
     private GameObject HandleScreenManager()
@@ -434,12 +438,14 @@ public class GameManager : NetworkBehaviour
             return false;
         }
 
+        if (clientId == localPlayerInfo.playerId) localPlayerInfo = newInfo;
+
         playersDict[clientId] = newInfo;
         return true;
     }
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.D))
+        if (Input.GetKeyDown(KeyCode.D) && IsHost)
             NetworkManager.DisconnectClient(playersNetList[1].playerId);
         if (Input.GetKeyDown(KeyCode.S))
             PrintLocalPlayerTags();

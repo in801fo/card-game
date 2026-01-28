@@ -20,12 +20,13 @@ public class CardScriptableEditor : Editor
     private SerializedProperty _affectedTags;
     private FieldInfo heals;
     private FieldInfo hasSoundEffect;
-    private FieldInfo onUseSoundEffect;
+    private SerializedProperty onUseSFXArr;
     private FieldInfo maxCardUsages;
 
     //private CardScriptable target;
 
     private bool showTags;
+    private bool showSoundEffects;
 
     private void OnEnable()
     {
@@ -42,7 +43,7 @@ public class CardScriptableEditor : Editor
         heals = GetBackingField(target, "Heals");
         _affectedTags = serializedObject.FindProperty("affectedTags");
         hasSoundEffect = GetBackingField(target, "hasSoundEffect");
-        onUseSoundEffect = GetBackingField(target, "onUseSoundEffect");
+        onUseSFXArr = serializedObject.FindProperty("onUseSoundEffect");
         maxCardUsages = GetBackingField(target, "maxCardUsages");
     }
 
@@ -86,7 +87,7 @@ public class CardScriptableEditor : Editor
             numberOfAffectedPlayers.SetValue(target, EditorGUILayout.IntField("Number Of Affected Players", GetFieldValue<int>(numberOfAffectedPlayers)));
             
             if ((int)numberOfAffectedPlayers.GetValue(target) == -1)
-                HandleAffectedTags();
+                HandleArray(_affectedTags, "Affect players with tags", "Affected Tag", ref showTags);
         }
 
         EditorGUILayout.Separator();
@@ -94,7 +95,7 @@ public class CardScriptableEditor : Editor
         hasSoundEffect.SetValue(target, EditorGUILayout.Toggle("Has Sound Effect", GetFieldValue<bool>(hasSoundEffect)));
 
         if (GetFieldValue<bool>(hasSoundEffect))
-            onUseSoundEffect.SetValue(target, EditorGUILayout.ObjectField("Audio To Play On Use", GetFieldValue<AudioClip>(onUseSoundEffect), typeof(AudioClip), false));
+            HandleArray(onUseSFXArr, "Possible SFX on use", "SFX", ref showSoundEffects);
         
         //makes is so that the editor, on closure, writes the modified data on disk
         EditorUtility.SetDirty(target);
@@ -109,34 +110,34 @@ public class CardScriptableEditor : Editor
         return (T)fieldInfo.GetValue(target);
     }
 
-    private void HandleAffectedTags()
+    private void HandleArray(SerializedProperty property, string arrayLable, string elementLable, ref bool foldoutTracker)
     {
         EditorGUI.indentLevel = 1;
-        showTags = EditorGUILayout.BeginFoldoutHeaderGroup(showTags, "Card's Affected Tags");
+        foldoutTracker = EditorGUILayout.BeginFoldoutHeaderGroup(foldoutTracker, arrayLable);
 
-        if (showTags)
+        if (foldoutTracker)
         {
-            _affectedTags.arraySize = EditorGUILayout.IntField(_affectedTags.arraySize);
-            HandleArray(_affectedTags.arraySize);
+            property.arraySize = EditorGUILayout.IntField(property.arraySize);
+            HandleArrayElements(property.arraySize, property, elementLable);
         }
 
         EditorGUI.indentLevel = 0;
         EditorGUILayout.EndFoldoutHeaderGroup();
-        
+
     }
-    
+
     private bool IsCharacterCard()
     {
         return (cardTypeEnum)cardType.GetValue(target) == cardTypeEnum.CHARACTER;
     }
 
-    private void HandleArray(int arrSize)
+    private void HandleArrayElements(int arrSize, SerializedProperty property, string arrayElementLable)
     {
         for (int i = 0; i < arrSize; i++)
         {
-            var affectedTagsElem = _affectedTags.GetArrayElementAtIndex(i);
+            var affectedTagsElem = property.GetArrayElementAtIndex(i);
             EditorGUI.indentLevel = 2;
-            EditorGUILayout.PropertyField(affectedTagsElem, new GUIContent("Affected Tag " + i));
+            EditorGUILayout.PropertyField(affectedTagsElem, new GUIContent(arrayElementLable + " " + i));
         }
 
     }
