@@ -22,7 +22,7 @@ MonoBehaviour:
   <numberOfAffectedPlayers>k__BackingField: -1
   <Heals>k__BackingField: 0
   <damageAmount>k__BackingField: 46
-  <cardEffects>k__BackingField: 
+  cardEffects: 00000000
   <maxCardUsages>k__BackingField: 1
   affectedTags: 01000000
   <hasSoundEffect>k__BackingField: 1

@@ -45,7 +45,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1733936616
+  GlobalObjectIdHash: 147404713
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -83,3 +83,4 @@ MonoBehaviour:
   audioManager: {fileID: 5492879894825478014, guid: 4d2741658ec08374ba94c55a0b287e74, type: 3}
   networkManager: {fileID: 6578108104356264235, guid: 3c06aafcc59f34142b23bcf0131a9fb9, type: 3}
   networkUI: {fileID: 0}
+  effectManager: {fileID: 5367571470007948196, guid: 690ae52a044a4c5409c1e5daeffbb0ce, type: 3}

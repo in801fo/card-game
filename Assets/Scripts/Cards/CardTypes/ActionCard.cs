@@ -58,7 +58,8 @@ public class ActionCard : Card
     {
         ReduceCardUse();
         if (cardData.cardEffects != null && cardData.cardEffects.Length != 0)
-            EffectManager.Instance.RequestApplyEffectServer_Rpc(affectedPlayers.ToArray(), cardData.cardEffects);
+            //if the affected 
+            EffectManager.Instance.RequestApplyEffectServer_Rpc(affectedPlayers == null ? GameManager.playersDict.Keys.ToArray() : affectedPlayers.ToArray(), cardData.cardEffects);
         if (cardData.hasSoundEffect) 
             AudioManager.Instance.RequestPlayCardSFXServer_Rpc(Random.Range(0, cardData.onUseSoundEffect.Length), cardData.name);
         OnCardUseReady?.Invoke(this);
@@ -71,7 +72,7 @@ public class ActionCard : Card
         else
         {
             HpManager.Instance.HandleAffectedTagsServer_Rpc(cardData.affectedTags, cardData.damageAmount, cardData.Heals);
-            HandleReadyToUse();
+            HandleReadyToUse(GameManager.GetAllPlayersWithTags(cardData.affectedTags));
         }
     }
 

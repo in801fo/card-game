@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "NewCard", menuName = "Create New Card")]
@@ -19,11 +18,11 @@ public class CardScriptable : ScriptableObject
     [Tooltip("Does this card heal instead of damaging other players?")]
     [field: SerializeField] public bool Heals { get; private set; }
     [field: SerializeField][Range(0, HpManager.maxHp)] public float damageAmount { get; private set; }
-    [field: SerializeField] public effectsEnum[] cardEffects { get; private set; }
+    [SerializeField] public effectsEnum[] cardEffects;
     [field: SerializeField] public int maxCardUsages { get; private set; }
     //I KNOW I KNOW IT'S BAD BUT UNITY'S WORSE WITH ITS SHITTY ASS SERIALIZATION, FORGIVE ME FATHER T_T
     [SerializeField] public playerTagsEnum[] affectedTags;
     [field: SerializeField] public bool hasSoundEffect { get; private set; }
-    [field: SerializeField] public AudioClip[] onUseSoundEffect;
+    [SerializeField] public AudioClip[] onUseSoundEffect;
 
 }

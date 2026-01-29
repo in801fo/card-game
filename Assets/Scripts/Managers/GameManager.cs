@@ -3,6 +3,9 @@ using Unity.Netcode;
 using UnityEngine;
 using Random = UnityEngine.Random;
 using System;
+using Unity.VisualScripting;
+using System.Linq;
+using JetBrains.Annotations;
 public class GameManager : NetworkBehaviour
 {
     [SerializeField] private DebugUIManager debugUIManager;
@@ -17,6 +20,8 @@ public class GameManager : NetworkBehaviour
     [SerializeField] private AudioManager audioManager;
     [SerializeField] private NetworkManager networkManager;
     [SerializeField] private GameObject networkUI;
+
+    [SerializeField] private EffectManager effectManager;
 
     private NetworkUIHandler networkUIHandler;
 
@@ -159,12 +164,32 @@ public class GameManager : NetworkBehaviour
         //once the scene has changed to the gameScene it'll trigger on all clients + the host: HandleGameStartClient_Rpc 
         NetworkManager.SceneManager.OnLoadEventCompleted += (_, _, _, _) => HandleGameStartClient_Rpc();
     }
-    
-    
+
+
     public static string GetFallbackUsername()
     {
-        if(string.IsNullOrEmpty(noUsernameProvidedUsernameFallback)) noUsernameProvidedUsernameFallback = namePrefixWhenNameEmpty + Random.Range(1000, 5000).ToString();
+        if (string.IsNullOrEmpty(noUsernameProvidedUsernameFallback)) noUsernameProvidedUsernameFallback = namePrefixWhenNameEmpty + Random.Range(1000, 5000).ToString();
         return noUsernameProvidedUsernameFallback;
+    }
+    
+    public static List<ulong> GetAllPlayersWithTags(playerTagsEnum[] playerTagsEnums)
+    {
+        List<playerInfo> playerInfos = playersDict.Values.ToList();
+        List<ulong> res = new List<ulong>();
+
+        for (int i = 0; i < playerInfos.Count; i++)
+        {
+            for (int j = 0; j < playerTagsEnums.Length; j++)
+            {
+                if (TagHandler.HasTag(playerInfos[i].playerTagsMask, playerTagsEnums[j]))
+                {
+                    res.Add(playerInfos[i].playerId);
+                    break;
+                }
+            }
+        }
+
+        return res;
     }
 
     /// <summary>
@@ -210,6 +235,8 @@ public class GameManager : NetworkBehaviour
         {
             HandleAudioGeneration();
             HandleTagAssigner();
+            HandleEffectManager();
+
         }
 
         //here getting the setting the parent to the managersHolder
@@ -231,7 +258,14 @@ public class GameManager : NetworkBehaviour
 
     }
 
-#region Managers Generation Handlers
+    private void HandleEffectManager()
+    {
+        GameObject effManGO = Instantiate(effectManager.gameObject);
+        managers.Add(effManGO);
+        effManGO.GetComponent<NetworkBehaviour>().NetworkObject.Spawn();
+    }
+
+    #region Managers Generation Handlers
 
     private void HandleNetworkManagers()
     {

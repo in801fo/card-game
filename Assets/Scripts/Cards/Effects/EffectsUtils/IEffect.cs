@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+using System.Linq;
 
 public interface IEffect
 {
@@ -13,10 +13,10 @@ public interface IEffect
     /// </summary>
     public static int turnDuration { get; set; }
 
-    public static Action<List<ulong>, int, float, effectsEnum> OnEffectApplied { get; set; }
+    public static Action<ulong[], int, float, effectsEnum> OnEffectApplied { get; set; }
     public static effectsEnum effectAsEnum { get; set; }
 
-    public static void Apply(List<ulong> playerIds)
+    public static void Apply(ulong[] playerIds)
     {
         OnEffectApplied?.Invoke(playerIds, turnDuration, secondsDuration, effectAsEnum);
     }

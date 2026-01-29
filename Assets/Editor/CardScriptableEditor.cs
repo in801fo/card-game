@@ -1,10 +1,6 @@
 
-using System;
-using System.Collections.Generic;
 using System.Reflection;
-using Codice.Client.Common;
 using UnityEditor;
-using UnityEditor.Rendering;
 using UnityEngine;
 
 [CustomEditor(typeof(CardScriptable)), CanEditMultipleObjects]
@@ -14,7 +10,7 @@ public class CardScriptableEditor : Editor
     private FieldInfo Desc;
     private FieldInfo cardType;
     private FieldInfo damageAmount;
-    private FieldInfo cardEffects;
+    private SerializedProperty cardEffects;
     private FieldInfo consequenceTarget;
     private FieldInfo numberOfAffectedPlayers;
     private SerializedProperty _affectedTags;
@@ -26,6 +22,7 @@ public class CardScriptableEditor : Editor
     //private CardScriptable target;
 
     private bool showTags;
+    private bool showEffects;
     private bool showSoundEffects;
 
     private void OnEnable()
@@ -37,7 +34,7 @@ public class CardScriptableEditor : Editor
         Desc = GetBackingField(target, "Description");
         cardType = GetBackingField(target, "Type");
         damageAmount = GetBackingField(target, "damageAmount");
-        cardEffects = GetBackingField(target, "cardEffects");
+        cardEffects = serializedObject.FindProperty("cardEffects");
         consequenceTarget = GetBackingField(target, "consequenceTarget");
         numberOfAffectedPlayers = GetBackingField(target, "numberOfAffectedPlayers");
         heals = GetBackingField(target, "Heals");
@@ -89,6 +86,10 @@ public class CardScriptableEditor : Editor
             if ((int)numberOfAffectedPlayers.GetValue(target) == -1)
                 HandleArray(_affectedTags, "Affect players with tags", "Affected Tag", ref showTags);
         }
+
+        EditorGUILayout.Separator();
+
+        HandleArray(cardEffects, "Inflicting Effects", "Effect", ref showEffects);
 
         EditorGUILayout.Separator();
 

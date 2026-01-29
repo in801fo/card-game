@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 public class Blindness : IEffect
 {
@@ -9,9 +8,9 @@ public class Blindness : IEffect
     public static consequenceTarget target { get; set; }
     public static effectsEnum effectAsEnum = effectsEnum.BLINDNESS;
 
-    public static void Apply(List<ulong> playerIds)
+    public static void Apply(ulong[] playerIds)
     {
-        
+                
     }
 
 }
