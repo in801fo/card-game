@@ -4,6 +4,7 @@ using System.Linq;
 using Unity.Collections;
 using Unity.Netcode;
 using Unity.VisualScripting;
+using UnityEngine;
 
 //TODO: implement a way to Remove tags (very easy)
 
@@ -43,17 +44,7 @@ public class PlayerMaskAssigner : NetworkBehaviour
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     public void HandleAddPlayerTagsServer_Rpc(ushort tag, ulong playerId)
     {
-
-        ushort oldMask = GameManager.playersDict[playerId].playerTagsMask;
-
-        //if it already has the passed tag, then there is no need to add it as that would also mess up the mask
-        if (EnumMaskHandler<playerTagsEnum>.HasEnumValueInMask(oldMask, (playerTagsEnum)tag))
-        {
-            RuntimeMsg.Warning("Avoided tag mess!");
-            return;
-        }
-
-        HandleAddToMask<playerTagsEnum>((playerTagsEnum)tag, playerId);
+        SafeHandleAddToMask<playerTagsEnum>((playerTagsEnum)tag, playerId);
 
         RuntimeMsg.Info($"Added tag: {(playerTagsEnum)tag} to player {playerId}");
 
@@ -68,16 +59,7 @@ public class PlayerMaskAssigner : NetworkBehaviour
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     public void HandleAddEffectServer_Rpc(ushort effect, ulong playerId)
     {
-        ushort oldMask = GameManager.playersDict[playerId].playerEffectsMask;
-
-        //if it already has the passed effect, then there is no need to add it as that would also mess up the mask
-        if (EnumMaskHandler<effectsEnum>.HasEnumValueInMask(oldMask, (effectsEnum)effect))
-        {
-            RuntimeMsg.Warning("Avoided effects mess!");
-            return;
-        }
-
-        HandleAddToMask<effectsEnum>((effectsEnum)effect, playerId);
+        SafeHandleAddToMask<effectsEnum>((effectsEnum)effect, playerId);
         RuntimeMsg.Info($"Added effect to mask: {(effectsEnum)effect} to player {playerId}");
     }
 
@@ -87,9 +69,9 @@ public class PlayerMaskAssigner : NetworkBehaviour
     /// <typeparam name="T">The type we're dealing with (either <c>effectsEnum</c> or <c>playerTagsEnum</c>)</typeparam>
     /// <param name="enumValue">The value to add to the masks</param>
     /// <param name="playerId">The id of the player in question</param>
-    public void HandleAddToMask<T>(T enumValue, ulong playerId) where T : Enum
+    public void SafeHandleAddToMask<T>(T enumValue, ulong playerId) where T : Enum
     {
-        playerInfo localCache = GameManager.playersDict[playerId];
+        /*playerInfo localCache = GameManager.playersDict[playerId];
 
         ushort oldMask = 0, enumValueToUShort;
 
@@ -107,11 +89,34 @@ public class PlayerMaskAssigner : NetworkBehaviour
             playerTagsMask = (typeof(T) == typeof(playerTagsEnum)) ? (ushort)(oldMask + enumValueToUShort) : localCache.playerTagsMask,
             playerEffectsMask = (typeof(T) == typeof(effectsEnum)) ? (ushort)(oldMask + enumValueToUShort) : localCache.playerEffectsMask,
             playerId = playerId
-        };
+        };*/
+
+        playerInfo info = GameManager.playersDict[playerId];
+
+
+        if (typeof(T) == typeof(playerTagsEnum))
+            EnumMaskHandler<T>.SafeAddTagToMask(ref info.playerTagsMask, enumValue);
+        else
+            EnumMaskHandler<T>.SafeAddTagToMask(ref info.playerEffectsMask, enumValue);
 
         //change the corresponding player data on the server which will lead to the local client receiving the change
         //and applying on itself
-        GameManager.Instance.ModifyLocalPlayerServer_Rpc(newPlayerData, newPlayerData.playerId);
+        GameManager.Instance.ModifyLocalPlayerServer_Rpc(info, info.playerId);
+    }
+
+    public void SafeHandleRemoveFromMask<T>(T enumValue, ulong playerId) where T : Enum
+    {
+        playerInfo info = GameManager.playersDict[playerId];
+
+
+        if (typeof(T) == typeof(playerTagsEnum))
+            EnumMaskHandler<T>.SafeRemoveTagFromMask(ref info.playerTagsMask, enumValue);
+        else
+            EnumMaskHandler<T>.SafeRemoveTagFromMask(ref info.playerEffectsMask, enumValue);
+
+        //change the corresponding player data on the server which will lead to the local client receiving the change
+        //and applying on itself
+        GameManager.Instance.ModifyLocalPlayerServer_Rpc(info, info.playerId);
     }
 
     private void CheckInGroupHasMeridione(List<CardScriptable> cards)
@@ -148,6 +153,5 @@ public class PlayerMaskAssigner : NetworkBehaviour
         FixedString64Bytes scriptableName = new FixedString64Bytes(scriptable.Name);
         CheckHasMeridioneServer_Rpc(NetworkManager.LocalClientId, scriptable.Type, scriptableName);
     }
-
 
 }

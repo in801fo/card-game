@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 
 public interface IEffect
 {
@@ -20,5 +19,7 @@ public interface IEffect
     {
         OnEffectApplied?.Invoke(playerIds, turnDuration, secondsDuration, effectAsEnum);
     }
+
+    public void Undo();
 
 }

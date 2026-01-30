@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Unity.Netcode;
 
 
@@ -21,6 +22,8 @@ public class EffectsManager : NetworkBehaviour
         {effectsEnum.BLINDNESS, typeof(Blindness)},
         {effectsEnum.CONFUSION, typeof(Confusion)}
     };
+
+    private static Dictionary<effectsEnum, effectDurationMeasurement> appliedEffectsWithTurnsOrTimeLeft = new Dictionary<effectsEnum, effectDurationMeasurement>();
 
     public override void OnNetworkSpawn()
     {
@@ -51,7 +54,16 @@ public class EffectsManager : NetworkBehaviour
         }
 
         MethodInfo applyMethod = effectsDict[effect].GetMethod(methodName, BindingFlags.Static | BindingFlags.Public | BindingFlags.FlattenHierarchy);
+        
+        float timeLeft = (float)effectsDict[effect].GetType().GetField("secondsDuration", BindingFlags.Static | BindingFlags.Public).GetValue(effectsDict[effect]);
+        int turnsLeft = (int)effectsDict[effect].GetType().GetField("turnDuration", BindingFlags.Static | BindingFlags.Public).GetValue(effectsDict[effect]);
+
+
         if (applyMethod == null) applyMethod = typeof(IEffect).GetMethod(methodName);
+
+        if (!appliedEffectsWithTurnsOrTimeLeft.ContainsKey(effect))
+            appliedEffectsWithTurnsOrTimeLeft.Add(effect, new effectDurationMeasurement(){ timeLeft = timeLeft, turnsLeft = turnsLeft});
+
         applyMethod.Invoke(null, new object[] { playerIds });
         OnLocalPlayerEffectFelt.Invoke(effect);
     }
@@ -62,8 +74,9 @@ public class EffectsManager : NetworkBehaviour
     {
         if (!players.Contains(NetworkManager.Singleton.LocalClientId)) return;
 
+
         for (int i = 0; i < effects.Length; i++)
-        {
+        {            
             DoIt(effects[i], players);
         }
     }
@@ -80,9 +93,19 @@ public class EffectsManager : NetworkBehaviour
             }
 
             ApplyEffectsClient_Rpc(affectedPlayers, effects);
-            PlayerMaskAssigner.Instance.HandleAddEffectServer_Rpc((ushort)effects[i], affectedPlayers[i]);
+            for (int j = 0; j < effects.Length; j++)
+            {
+                PlayerMaskAssigner.Instance.HandleAddEffectServer_Rpc((ushort)effects[j], affectedPlayers[i]);
+            }
         }
     }
 
 
+    private struct effectDurationMeasurement
+    {
+        public bool turn;
+        public int turnsLeft;
+        public float timeLeft;
+    }
 }
+

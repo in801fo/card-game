@@ -26,7 +26,7 @@ public class EnumMaskHandler<T> where T: Enum
     public static List<T> ExtractPlayerTagsFromMask(ushort mask)
     {
         List<T> enumElementsList = new List<T>();
-        
+
         for (int i = 0; i < 16; i++)
         {
             /*
@@ -37,5 +37,19 @@ public class EnumMaskHandler<T> where T: Enum
         }
 
         return enumElementsList;
+    }
+
+    public static void SafeAddTagToMask(ref ushort maskToAdd, T enumValue)
+    {
+        if (HasEnumValueInMask(maskToAdd, enumValue)) return;
+
+        maskToAdd += (ushort)Convert.ChangeType(enumValue, typeof(ushort));
+    }
+
+    public static void SafeRemoveTagFromMask(ref ushort maskToAdd, T enumValue)
+    {
+        if (!HasEnumValueInMask(maskToAdd, enumValue)) return;
+
+        maskToAdd -= (ushort)Convert.ChangeType(enumValue, typeof(ushort));
     }
 }
