@@ -8,9 +8,12 @@ public class Blindness : IEffect
     public static consequenceTarget target { get; set; }
     public static effectsEnum effectAsEnum = effectsEnum.BLINDNESS;
 
-    public static void Apply(ulong[] playerIds)
+    public static void Apply(ulong[] _)
     {
-                
+        foreach(CardGraphics card in InventoryUIManager.Instance.cards)
+        {
+            card.MaskCard();
+        }
     }
 
 }

@@ -8,16 +8,23 @@ using UnityEngine.UI;
 public class CardGraphics : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI nameBox;
-    [SerializeField] private Image cardImage;
+    [SerializeField] private Image cardImageSpace;
     [SerializeField] private TextMeshProUGUI descBox;
     [SerializeField] private TextMeshProUGUI damageBox;
-    [SerializeField] private GameObject effectsScrollViewContentObject;
-    [SerializeField] private AnimationClip cardSelectedAnimation;
     [SerializeField] private bool isInfoCard;
+
+    private const string maskedCardTitle = "?????";
+    private const string maskedCardDescription = "?????";
+    private const string maskedCardData = "??????";
+
 
     public Card card { get; private set; }
 
     private Animator animator;
+
+    private Sprite cardImage;
+
+    private bool isMasked;
 
     private List<Vector2> defaultUVs = new List<Vector2>()
     {
@@ -42,20 +49,26 @@ public class CardGraphics : MonoBehaviour
             CardInteractionManager.OnCardCursorHover += HandleAnimationState;
     }
 
-    public void SetUpGameCard(float cardFrontOffset, Card card)
+    public void SetUpGameCard(float cardFrontOffset, Card card, bool isMasked = false)
     {
         this.card = card;
-
-        nameBox.SetText(card.cardData.Name);
 
         MeshFilter meshFilter = this.gameObject.GetComponent<MeshFilter>();
 
         SetCardUVs(meshFilter.mesh, cardFrontOffset);
+
+        if (!isMasked)
+        {
+            nameBox.SetText(card.cardData.Name);
+            cardImage = card.cardData.Sprite;
+        }
+        else
+            MaskCard();
     }
-    
+
     private void HandleAnimationState(Card card)
     {
-        
+
         if (card != null && card == this.card)
         {
             animator.SetBool("up", true);
@@ -66,7 +79,14 @@ public class CardGraphics : MonoBehaviour
             animator.SetBool("up", false);
             animator.SetBool("down", true);
         }
-        
+
+    }
+    
+    public void MaskCard()
+    {
+        nameBox.SetText(maskedCardTitle);
+        cardImageSpace.sprite = InventoryUIManager.Instance.maskedCardSprite;
+        isMasked = true;
     }
 
     private void SetCardUVs(Mesh mesh, float cardFrontOffset)
@@ -93,17 +113,28 @@ public class CardGraphics : MonoBehaviour
             this.transform.parent.rotation = Quaternion.LookRotation(this.transform.parent.position - Camera.main.transform.position) * Quaternion.Euler(Vector3.forward * 90);
     }
 
-    public void SetUpInfoCard(Card card)
+    public void SetUpInfoCard(Card card, bool mask = false)
     {
-        SetUpGameCard(CardGenerationManager.Instance.GetCardFrontIndex(card.cardData.Type), card);
+        SetUpGameCard(CardGenerationManager.Instance.GetCardFrontIndex(card.cardData.Type), card, mask);
 
-        descBox.SetText(card.cardData.Description);
+        if (!isMasked) descBox.SetText(card.cardData.Description);
+        else descBox.SetText(maskedCardDescription);
 
-        //TODO: improve formatting in strings
-        if (card.cardData.Type != cardTypeEnum.CHARACTER)
-            damageBox.SetText("Damage: " + card.cardData.damageAmount + "\nMax Usages: " + card.cardData.maxCardUsages + "\nLeft Usages: " + card.currentCardWear);
-        else damageBox.SetText("No Damage\nNo Max Usages");
+        HandleDamageText();
+
         isInfoCard = true;
+    }
+
+    private void HandleDamageText()
+    {
+        //TODO: improve formatting in strings (i.e. I don't like how they look in-game)
+        string damageText = $"Damage: " + (isMasked ? maskedCardData : card.cardData.damageAmount) +
+                                "\nMax Usages: " + (isMasked ? maskedCardData : card.cardData.maxCardUsages) +
+                                "\nLeft Usages: " + (isMasked ? maskedCardData : card.currentCardWear);
+        
+        if (card.cardData.Type != cardTypeEnum.CHARACTER || isMasked)
+            damageBox.SetText(damageText);
+        else damageBox.SetText("No Damage\nNo Max Usages");
     }
 
     public override bool Equals(object obj)

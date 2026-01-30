@@ -839,7 +839,7 @@ MonoBehaviour:
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
-  m_HorizontalAlignment: 16
+  m_HorizontalAlignment: 8
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
@@ -2767,11 +2767,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Card
   nameBox: {fileID: 7800893309371590587}
-  cardImage: {fileID: 4461997872420740592}
+  cardImageSpace: {fileID: 4461997872420740592}
   descBox: {fileID: 4765451342908250333}
   damageBox: {fileID: 4601489877852412643}
-  effectsScrollViewContentObject: {fileID: 1227748770210027752}
-  cardSelectedAnimation: {fileID: 0}
   isInfoCard: 1
 --- !u!65 &5665312530463205780
 BoxCollider:

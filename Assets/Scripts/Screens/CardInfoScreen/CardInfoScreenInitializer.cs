@@ -4,7 +4,7 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 
-public class CardInfoScreenInitializer : ScreenInitializer<Card>
+public class CardInfoScreenInitializer : ScreenInitializer<CardInfoScreenData>
 {
     [SerializeField] private GameObject effectEntryPrefab;
 
@@ -16,19 +16,21 @@ public class CardInfoScreenInitializer : ScreenInitializer<Card>
 
     private Card card;
 
-    public override void Initialize(Card card)
+    public override void Initialize(CardInfoScreenData data)
     {
         contentObjectEffectsScrollView = GameObject.FindWithTag(effectsLabel);
-        GetComponentInChildren<CardGraphics>().SetUpInfoCard(card);
-        this.card = card;
+        
+        GetComponentInChildren<CardGraphics>().SetUpInfoCard(data.card, data.isMasked);
+
+        this.card = data.card;
         EffectsScrollView();
 
-        base.Initialize(card);
+        base.Initialize(data);
     }
-    
+
     private void EffectsScrollView()
     {
-        if (card.cardData.Type == cardTypeEnum.CHARACTER) 
+        if (card.cardData.Type == cardTypeEnum.CHARACTER)
             return;
         //To go around a bug which, for the love of God, I cannot figure out the origin,
         //I pool existing effects and will only show the ones which the current card has
@@ -37,13 +39,13 @@ public class CardInfoScreenInitializer : ScreenInitializer<Card>
     }
 
     private void ToggleEffects()
-    {   
+    {
         for (int i = 0; i < effectEntries.Count; i++)
         {
             //I know I could simplify this but for readability I'll leave it like this
             if (card.cardData.cardEffects.Contains(effectEntries[i].representingEffect))
                 effectEntries[i].gameObject.SetActive(true);
-            else 
+            else
                 effectEntries[i].gameObject.SetActive(false);
         }
     }
@@ -59,12 +61,12 @@ public class CardInfoScreenInitializer : ScreenInitializer<Card>
             effectsEnum value = (effectsEnum)effects.GetValue(i);
             InitializeEffectEntry(
                 value,
-                card.cardData.cardEffects.Contains(value)
+                (card.cardData == null) ? false : card.cardData.cardEffects.Contains(value)
             );
         }
 
     }
-    
+
     private void InitializeEffectEntry(effectsEnum effect, bool state)
     {
         GameObject currentEntryPrefab = Instantiate(effectEntryPrefab, Vector3.zero, Quaternion.identity);
@@ -80,5 +82,10 @@ public class CardInfoScreenInitializer : ScreenInitializer<Card>
         currentEntryPrefab.SetActive(state);
     }
 
+}
 
+public struct CardInfoScreenData
+{
+    public Card card;
+    public bool isMasked;
 }

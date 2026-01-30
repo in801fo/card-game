@@ -1,5 +1,5 @@
 public enum effectsEnum
 {
-    BLINDNESS,
-    CONFUSION
+    BLINDNESS = 1,
+    CONFUSION = 2
 }

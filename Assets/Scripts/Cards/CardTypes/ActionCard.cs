@@ -58,8 +58,14 @@ public class ActionCard : Card
     {
         ReduceCardUse();
         if (cardData.cardEffects != null && cardData.cardEffects.Length != 0)
-            //if the affected 
-            EffectManager.Instance.RequestApplyEffectServer_Rpc(affectedPlayers == null ? GameManager.playersDict.Keys.ToArray() : affectedPlayers.ToArray(), cardData.cardEffects);
+            //if the passed list of affected players is null that means that the affected are all players in the game
+            //TODO: differentiate between ALL_INC and ALL_EX, currently only considering ALL_INC
+            
+            EffectsManager.Instance.RequestApplyEffectServer_Rpc(
+                affectedPlayers == null ?
+                    GameManager.playersDict.Keys.ToArray() : affectedPlayers.ToArray(),
+                cardData.cardEffects);
+        
         if (cardData.hasSoundEffect) 
             AudioManager.Instance.RequestPlayCardSFXServer_Rpc(Random.Range(0, cardData.onUseSoundEffect.Length), cardData.name);
         OnCardUseReady?.Invoke(this);
@@ -70,8 +76,10 @@ public class ActionCard : Card
         if (cardData.numberOfAffectedPlayers > 0)
             handleToPlayerConsequenceScreen = PlayerConsequenceScreenInitializer.AskForPlayerGroup(cardData.numberOfAffectedPlayers, cardData.consequenceTarget);
         else
+        //if the card affects players with a certain tag 
         {
             HpManager.Instance.HandleAffectedTagsServer_Rpc(cardData.affectedTags, cardData.damageAmount, cardData.Heals);
+
             HandleReadyToUse(GameManager.GetAllPlayersWithTags(cardData.affectedTags));
         }
     }

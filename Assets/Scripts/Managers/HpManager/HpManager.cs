@@ -155,7 +155,7 @@ public class HpManager : NetworkBehaviour
         {
             foreach (playerInfo player in players)
             {
-                List<playerTagsEnum> currentPlayerTagsEnums = TagHandler.ExtractPlayerTagsFromMask(player.playerTagsMask);
+                List<playerTagsEnum> currentPlayerTagsEnums = EnumMaskHandler<playerTagsEnum>.ExtractPlayerTagsFromMask(player.playerTagsMask);
                 if (currentPlayerTagsEnums.Contains(affectedTags[i])) { HandleDamageOrHealFromServer(amount, player.playerId, cardHeals); }
             }
         }

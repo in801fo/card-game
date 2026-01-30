@@ -3,9 +3,8 @@ using Unity.Netcode;
 using UnityEngine;
 using Random = UnityEngine.Random;
 using System;
-using Unity.VisualScripting;
 using System.Linq;
-using JetBrains.Annotations;
+
 public class GameManager : NetworkBehaviour
 {
     [SerializeField] private DebugUIManager debugUIManager;
@@ -16,14 +15,16 @@ public class GameManager : NetworkBehaviour
     [SerializeField] private CardInteractionManager cardInteractionManager;
     [SerializeField] private HpManager healthManager;
     [SerializeField] private HpUIManager healthUIManager;
-    [SerializeField] private PlayerTagAssigner playerTagAssigner;
+    [SerializeField] private PlayerMaskAssigner playerMaskAssigner;
     [SerializeField] private AudioManager audioManager;
     [SerializeField] private NetworkManager networkManager;
     [SerializeField] private GameObject networkUI;
 
-    [SerializeField] private EffectManager effectManager;
+    [SerializeField] private EffectsManager effectManager;
 
     private NetworkUIHandler networkUIHandler;
+
+    private InventoryUIManager inventoryUIManagerInstance;
 
     /// <summary>
     /// A dictionary with: 
@@ -172,6 +173,11 @@ public class GameManager : NetworkBehaviour
         return noUsernameProvidedUsernameFallback;
     }
     
+    /// <summary>
+    /// Checks if any players contained in the <c>playersDict</c> has any of the tags passed and returns their ids in a list
+    /// </summary>
+    /// <param name="playerTagsEnums">The list of tags of which to check of</param>
+    /// <returns>The list of player ids which have one of the passed tags</returns>
     public static List<ulong> GetAllPlayersWithTags(playerTagsEnum[] playerTagsEnums)
     {
         List<playerInfo> playerInfos = playersDict.Values.ToList();
@@ -181,7 +187,7 @@ public class GameManager : NetworkBehaviour
         {
             for (int j = 0; j < playerTagsEnums.Length; j++)
             {
-                if (TagHandler.HasTag(playerInfos[i].playerTagsMask, playerTagsEnums[j]))
+                if (EnumMaskHandler<playerTagsEnum>.HasEnumValueInMask(playerInfos[i].playerTagsMask, playerTagsEnums[j]))
                 {
                     res.Add(playerInfos[i].playerId);
                     break;
@@ -223,8 +229,6 @@ public class GameManager : NetworkBehaviour
         data.playerId = NetworkManager.LocalClientId;
         return data;
     } 
-    
-    
 
     private void HandleSpawnGameManagers()
     {
@@ -234,21 +238,21 @@ public class GameManager : NetworkBehaviour
         if (IsServer)
         {
             HandleAudioGeneration();
-            HandleTagAssigner();
+            HandlePlayerMaskAssigner();
             HandleEffectManager();
-
         }
 
         //here getting the setting the parent to the managersHolder
         for (int i = 0; i < managers.Count; i++)
         {
             Component[] list = managers[i].GetComponents<Component>();
-            if (list.Length > 2)
+            /*if (list.Length > 2)
                 RuntimeMsg.Warning($"Components list for {managers[i].name} is bigger than 2",
                     $"Amount of component of manager {managers[i].name} is bigger than 2. If the manager inherits from CoordinatedMonoBehaviour you are at risk of not initializing the manager as a requirement for CoordinatedMonoBehaviour type objects is that the script inheriting the class must be in second place. Please check that this is the case.");
-
+            */
+            Component cmp = Array.Find(list, (Component c) => c.GetType().IsSubclassOf(typeof(CoordinatedMonoBehaviour)));
             //here checking if the current manager is subclass of CoordinatedMonoBehaviour, if so incrementing actualInheriting
-            if (list[1].GetType().IsSubclassOf(typeof(CoordinatedMonoBehaviour))) actualInheriting++;
+            if (cmp!=null) actualInheriting++;
         }
 
         //if the number of CoordinatedMonoBehaviours is equal to the actual which inherited that means that all of them have
@@ -265,7 +269,7 @@ public class GameManager : NetworkBehaviour
         effManGO.GetComponent<NetworkBehaviour>().NetworkObject.Spawn();
     }
 
-    #region Managers Generation Handlers
+#region Managers Generation Handlers
 
     private void HandleNetworkManagers()
     {
@@ -273,10 +277,10 @@ public class GameManager : NetworkBehaviour
         networkUIHandler = Instantiate(networkUI.gameObject).GetComponent<NetworkUIHandler>();
     }
 
-    private void HandleTagAssigner()
+    private void HandlePlayerMaskAssigner()
     {
         
-        managers.Add(Instantiate(playerTagAssigner.gameObject));
+        managers.Add(Instantiate(playerMaskAssigner.gameObject));
         managers[managers.Count - 1].GetComponent<NetworkBehaviour>().NetworkObject.Spawn();
     }
 
@@ -321,8 +325,8 @@ public class GameManager : NetworkBehaviour
         new GameObject("== Inventory Handling ==");
         managers.Add(Instantiate(inventoryManager.gameObject));
 
-        InventoryUIManager inventoryUiManager = Instantiate(inventoryUIManager.gameObject).GetComponent<InventoryUIManager>();
-        managers.Add(inventoryUiManager.gameObject);
+        inventoryUIManagerInstance = Instantiate(inventoryUIManager.gameObject).GetComponent<InventoryUIManager>();
+        managers.Add(inventoryUIManagerInstance.gameObject);
     }
 
     private void HandleDebugUIGeneration(InventoryUIManager inventoryUIManager)
@@ -340,7 +344,6 @@ public class GameManager : NetworkBehaviour
 
     #endregion
 
-    public static void ValidateInitialization() => coordinatedMonoBehaviourCount++;
 
 #region Network Stuff
 
@@ -350,7 +353,7 @@ public class GameManager : NetworkBehaviour
         RuntimeMsg.Info("Game Started!");
         SyncDictionaryToPlayerNetList();
         HandleSpawnGameManagers();
-        HandleDebugUIGeneration(inventoryUIManager);
+        HandleDebugUIGeneration(inventoryUIManagerInstance);
     }
 
     private void SyncDictionaryToPlayerNetList()
@@ -377,63 +380,25 @@ public class GameManager : NetworkBehaviour
             playerId = senderId
         };
 
-        //if successful in adding the player to the dictionary then we are sure that the player has never been seen bby the server
+        //if successful in adding the player to the dictionary then we are sure that the player has never been seen 
+        // by the server
         if (SafeAddPlayerToDictionary(playerInfo, clientId))
             playersNetList.Add(playerInfo);
 
     }
 
-    /// <summary>
-    /// Handles the update for the specified client of their tags
-    /// </summary>
-    /// <param name="newMask"></param>
-    /// <param name="playerId"></param>
+    #endregion
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void HandleSetTagsServer_Rpc(ushort newMask, ulong playerId)
+    public void ModifyLocalPlayerServer_Rpc(playerInfo newPlayerInfo, ulong oldPlayerId)
     {
-        int indexInList = playersNetList.IndexOf(playersDict[playerId]);
+        if (!playersDict.ContainsKey(oldPlayerId)) return;
 
-        //dont know why, but is the only way to "update" a value in a networkList
-        playersNetList.RemoveAt(indexInList);
-        playersNetList.Insert(indexInList, new playerInfo()
-        {
-            Name = playersDict[playerId].Name,
-            Pronouns = playersDict[playerId].Pronouns,
-            playerTagsMask = newMask,
-            playerId = playersDict[playerId].playerId
-        });
+        int indexOfPlayer = playersNetList.IndexOf(playersDict[oldPlayerId]);
+        playersNetList[indexOfPlayer] = newPlayerInfo;
     }
 
-    /// <summary>
-    /// Adds to the specified player the given tag
-    /// </summary>
-    /// <param name="tag"></param>
-    /// <param name="playerId">The id of the player to which to add the tag</param>
-
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void HandleAddTagsServer_Rpc(ushort tag, ulong playerId)
-    {
-        int indexInList = playersNetList.IndexOf(playersDict[playerId]);
-
-        ushort oldMask = playersNetList[indexInList].playerTagsMask;
-
-        //if it already has the passed tag, then there is no need to add it as that would also mess up the tags
-        if (TagHandler.HasTag(oldMask, (playerTagsEnum)tag)) { RuntimeMsg.Info("Avoided tag mess!"); return; }
-
-        playersNetList[indexInList] = new playerInfo()
-        {
-            Name = playersDict[playerId].Name,
-            Pronouns = playersDict[playerId].Pronouns,
-            playerTagsMask = (ushort)(oldMask + tag),
-            playerId = playersDict[playerId].playerId
-        };
-        
-        RuntimeMsg.Info($"Added tag: {(playerTagsEnum)tag} to player {playerId}");
-
-        //updating the dictionary through the OnListChanged event of the playerNetList
-    }
-#endregion
+    #region Do Stuff Safely To Players Dict
     /// <summary>
     /// Checks for the presence of the give player's id. If found returns false otherwise true
     /// </summary>
@@ -477,6 +442,8 @@ public class GameManager : NetworkBehaviour
         playersDict[clientId] = newInfo;
         return true;
     }
+
+#endregion
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.D) && IsHost)
@@ -487,15 +454,16 @@ public class GameManager : NetworkBehaviour
     
     private void PrintLocalPlayerTags()
     {
-        List<playerTagsEnum> tags = TagHandler.ExtractPlayerTagsFromMask(localPlayerInfo.playerTagsMask);
+        List<effectsEnum> tags = EnumMaskHandler<effectsEnum>.ExtractPlayerTagsFromMask(localPlayerInfo.playerEffectsMask);
         string tagsString = string.Empty;
         for (int i = 0; i < tags.Count; i++)
         {
             tagsString += tags[i].ToString() + "\n";
         }
-        RuntimeMsg.Info("----Local Player Tags----", tagsString);
+        RuntimeMsg.Info("----Local Player Effects----", tagsString);
     }
-    
+
+    public static void ValidateInitialization() => coordinatedMonoBehaviourCount++;
 
     //TODO: once the host decides that the amount of player is sufficient make it so it can press a button and the game starts
 

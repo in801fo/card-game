@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.Collections;
 using UnityEngine;
 using System.Linq;
+using Unity.VisualScripting;
 
 public class InventoryUIManager : CoordinatedMonoBehaviour
 {
@@ -14,10 +15,14 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
     [SerializeField] private float cardReshuffleSpeed = 2.5f;
     [SerializeField] private float yCurveMultiplier;
     [SerializeField] private float cardZDistance;
+    [field: SerializeField] public Sprite maskedCardSprite { get; private set; }
+    public static InventoryUIManager Instance{ get; private set; }
     
     public int displayableCards { get; private set; } = 0;
     
-    private List<CardGraphics> cards;
+    public List<CardGraphics> cards { get; private set; }
+
+
     private MeshRenderer referenceCardRenderer;
 
     private float spaceOccupiedByCard;
@@ -33,10 +38,13 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
     /// </summary>
     private float cardsWorldWidth;
 
+
     protected override void Awake()
     {
         base.Awake();
         defaultCameraDistance += Camera.main.nearClipPlane + cardZDistance;
+        if (Instance == null) Instance = this;
+        else Destroy(this.gameObject);
     }
 
     protected override void Beginning()
@@ -50,11 +58,12 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
         CardInteractionManager.OnCardRelease += HandleCardRelease;
         Card.OnCardUseReady += HandleCardUse;
 
+        HandleCardGeneration();
+
         InventoryManager.OnCardAddedToHandDeck += HandleCardAdded;
         InventoryManager.OnGroupCardAddedToHandDeck += HandleGroupCardsAdded;
         InventoryManager.OnCardRemovedFromHandDeck += HandleCardRemoved;
-
-        HandleCardGeneration();
+        
     }
 
     private void HandleCardRemoved(CardScriptable scriptable)
@@ -210,7 +219,7 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
         int currentDisplayable = displayableCards;
         float currentOccupied = spaceOccupiedByCard;
         
-        CalculateDisplayebleCards();
+        CalculateDisplayableCards();
         UpdateCardSpace();
 
         //handles the update for the card's position after something has changed in the hand deck, like a removal or adding
@@ -239,7 +248,7 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
     {
         //here need to establish the number of displayable cards so to be able to move the extra ones 
         //in the side deck and not have to spawn them
-        CalculateDisplayebleCards();
+        CalculateDisplayableCards();
         InventoryManager.Instance.MoveCardsToSideDeck(displayableCards - 1, InventoryManager.Instance.GetHandDeckCount() - displayableCards);
         this.cards = GetCardGraphicsFromCardList(CardGenerationManager.Instance.GenerateCards(displayableCards));
         cardsCoroutines = new Coroutine[this.cards.Count];
@@ -295,7 +304,7 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
     /// <summary>
     /// Calculates the number of cards displayable at any time 
     /// </summary>
-    private void CalculateDisplayebleCards()
+    private void CalculateDisplayableCards()
     {
         float cardPixelsWidth = GetRefCardWidth();
         //amount of space occupied by a single card

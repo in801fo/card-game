@@ -82,5 +82,5 @@ MonoBehaviour:
   playerTagAssigner: {fileID: 558722634936090784, guid: 4e9669b9c3f792746a214d98ba80609e, type: 3}
   audioManager: {fileID: 5492879894825478014, guid: 4d2741658ec08374ba94c55a0b287e74, type: 3}
   networkManager: {fileID: 6578108104356264235, guid: 3c06aafcc59f34142b23bcf0131a9fb9, type: 3}
-  networkUI: {fileID: 0}
+  networkUI: {fileID: 7447336998978553544, guid: 29a717ac55691b2478a22e2b29950f19, type: 3}
   effectManager: {fileID: 5367571470007948196, guid: 690ae52a044a4c5409c1e5daeffbb0ce, type: 3}

@@ -137,10 +137,17 @@ public class CardInteractionManager : MonoBehaviour
 
     private void GetCardInfoScreen(Card card)
     {
-        GameObject screen = ScreensManager.Instance.SpawnScreen<Card>("cardInfo");
-        ScreenInitializer<Card> screenInitializer = screen.GetComponent<ScreenInitializer<Card>>();
+        GameObject screen = ScreensManager.Instance.SpawnScreen<CardInfoScreenData>("cardInfo");
+        CardInfoScreenInitializer screenInitializer = screen.GetComponent<CardInfoScreenInitializer>();
         if(screenInitializer != null)
-            screenInitializer.Initialize(card);
+            screenInitializer.Initialize(new CardInfoScreenData(){
+                card = card,
+                //check if the player is under the effect of blindness (which masks the info of cards)
+                isMasked = EnumMaskHandler<effectsEnum>.HasEnumValueInMask(
+                    GameManager.localPlayerInfo.playerEffectsMask,
+                    effectsEnum.BLINDNESS
+                )
+            });
     }
 
     private void UseCurrentlySelectedCard()
