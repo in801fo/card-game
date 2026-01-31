@@ -18,7 +18,7 @@ public class CardScriptable : ScriptableObject
     [Tooltip("Does this card heal instead of damaging other players?")]
     [field: SerializeField] public bool Heals { get; private set; }
     [field: SerializeField][Range(0, HpManager.maxHp)] public float damageAmount { get; private set; }
-    [SerializeField] public effectsEnum[] cardEffects;
+    [SerializeField] public effectData[] cardEffects;
     [field: SerializeField] public int maxCardUsages { get; private set; }
     //I KNOW I KNOW IT'S BAD BUT UNITY'S WORSE WITH ITS SHITTY ASS SERIALIZATION, FORGIVE ME FATHER T_T
     [SerializeField] public playerTagsEnum[] affectedTags;

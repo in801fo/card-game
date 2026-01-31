@@ -32,7 +32,7 @@ public class PlayerMaskAssigner : NetworkBehaviour
 
     private void AddEffectMask(effectsEnum value)
     {
-        HandleAddEffectServer_Rpc((ushort)value, NetworkManager.LocalClientId);
+        HandleAddEffectToPlayerDataServer_Rpc((ushort)value, NetworkManager.LocalClientId);
     }
 
     /// <summary>
@@ -52,15 +52,15 @@ public class PlayerMaskAssigner : NetworkBehaviour
     }
 
     /// <summary>
-    /// Adds to the specified player the given effect
+    /// Adds to the specified player's data the given effect
     /// </summary>
     /// <param name="effect">The effect whished to be added to the player's effect mask</param>
     /// <param name="playerId">The id of the desired player</param>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void HandleAddEffectServer_Rpc(ushort effect, ulong playerId)
+    public void HandleAddEffectToPlayerDataServer_Rpc(ushort effect, ulong playerId)
     {
         SafeHandleAddToMask<effectsEnum>((effectsEnum)effect, playerId);
-        RuntimeMsg.Info($"Added effect to mask: {(effectsEnum)effect} to player {playerId}");
+        RuntimeMsg.Info($"Added {(effectsEnum)effect} effect to {playerId}'s player mask");
     }
 
     /// <summary>
@@ -71,26 +71,6 @@ public class PlayerMaskAssigner : NetworkBehaviour
     /// <param name="playerId">The id of the player in question</param>
     public void SafeHandleAddToMask<T>(T enumValue, ulong playerId) where T : Enum
     {
-        /*playerInfo localCache = GameManager.playersDict[playerId];
-
-        ushort oldMask = 0, enumValueToUShort;
-
-        if (typeof(T) == typeof(playerTagsEnum))
-            oldMask = localCache.playerTagsMask;
-
-        if (typeof(T) == typeof(effectsEnum))
-            oldMask = localCache.playerEffectsMask;
-
-        enumValueToUShort = (ushort)Convert.ChangeType(enumValue, typeof(ushort));
-        playerInfo newPlayerData = new playerInfo()
-        {
-            Name = localCache.Name,
-            Pronouns = localCache.Pronouns,
-            playerTagsMask = (typeof(T) == typeof(playerTagsEnum)) ? (ushort)(oldMask + enumValueToUShort) : localCache.playerTagsMask,
-            playerEffectsMask = (typeof(T) == typeof(effectsEnum)) ? (ushort)(oldMask + enumValueToUShort) : localCache.playerEffectsMask,
-            playerId = playerId
-        };*/
-
         playerInfo info = GameManager.playersDict[playerId];
 
 
@@ -133,7 +113,6 @@ public class PlayerMaskAssigner : NetworkBehaviour
         if (Type == cardTypeEnum.CHARACTER &&
             southerners.Contains(Name.ToString()))
         {
-            print($"Adding HAS_MERIDIONE, requested by {caller}");
             AssignTagClient_Rpc(caller, playerTagsEnum.HAS_MERIDIONE);
         }
     }

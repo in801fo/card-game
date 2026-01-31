@@ -57,14 +57,17 @@ public class ActionCard : Card
     private void HandleReadyToUse(List<ulong> affectedPlayers = null)
     {
         ReduceCardUse();
+        //if the card has effects
         if (cardData.cardEffects != null && cardData.cardEffects.Length != 0)
             //if the passed list of affected players is null that means that the affected are all players in the game
             //TODO: differentiate between ALL_INC and ALL_EX, currently only considering ALL_INC
             
-            EffectsManager.Instance.RequestApplyEffectServer_Rpc(
+            //request the server for them to be applied
+            EffectsManager.Instance.RequestApplyEffectsServer_Rpc(
                 affectedPlayers == null ?
                     GameManager.playersDict.Keys.ToArray() : affectedPlayers.ToArray(),
-                cardData.cardEffects);
+                    cardData.cardEffects
+                );
         
         if (cardData.hasSoundEffect) 
             AudioManager.Instance.RequestPlayCardSFXServer_Rpc(Random.Range(0, cardData.onUseSoundEffect.Length), cardData.name);

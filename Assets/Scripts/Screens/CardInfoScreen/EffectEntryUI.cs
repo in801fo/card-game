@@ -5,7 +5,7 @@ using UnityEngine;
 /// </summary>
 public class EffectEntryUI : MonoBehaviour
 {
-    public effectsEnum representingEffect
+    public effectData representingEffect
     {
         get
         {
@@ -17,5 +17,5 @@ public class EffectEntryUI : MonoBehaviour
         }
 
     }
-    private effectsEnum? _representingEffect;
+    private effectData? _representingEffect;
 }

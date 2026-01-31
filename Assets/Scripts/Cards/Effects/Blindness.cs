@@ -1,14 +1,11 @@
-using System;
 
-public class Blindness : IEffect
+public class Blindness : Effect
 {
-    public static float secondsDuration { get; set; }
-    public static int turnDuration { get; set; }
-    public static Action<consequenceTarget, int, float, effectsEnum> OnEffectApplied { get; set; }
-    public static consequenceTarget target { get; set; }
-    public static effectsEnum effectAsEnum = effectsEnum.BLINDNESS;
+    public Blindness(effectData parameters) : base(parameters)
+    {
+    }
 
-    public static void Apply(ulong[] _)
+    protected override void HandleLogic()
     {
         foreach(CardGraphics card in InventoryUIManager.Instance.cards)
         {
@@ -16,4 +13,16 @@ public class Blindness : IEffect
         }
     }
 
+    public override effectsEnum GetEffectAsEnum()
+    {
+        return effectsEnum.BLINDNESS;
+    }
+
+    public override void TerminateEffect()
+    {
+        foreach(CardGraphics card in InventoryUIManager.Instance.cards)
+        {
+            card.UnMaskCard();
+        }
+    }
 }

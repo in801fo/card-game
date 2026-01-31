@@ -26,6 +26,8 @@ public class CardGraphics : MonoBehaviour
 
     private bool isMasked;
 
+    private float cardFrontOffset;
+
     private List<Vector2> defaultUVs = new List<Vector2>()
     {
         new Vector2(0.80f, 1.00f),
@@ -55,6 +57,8 @@ public class CardGraphics : MonoBehaviour
 
         MeshFilter meshFilter = this.gameObject.GetComponent<MeshFilter>();
 
+        this.cardFrontOffset = cardFrontOffset;
+
         SetCardUVs(meshFilter.mesh, cardFrontOffset);
 
         if (!isMasked)
@@ -81,7 +85,7 @@ public class CardGraphics : MonoBehaviour
         }
 
     }
-    
+
     public void MaskCard()
     {
         nameBox.SetText(maskedCardTitle);
@@ -186,5 +190,12 @@ public class CardGraphics : MonoBehaviour
     {
         StopAllCoroutines();
         CardInteractionManager.OnCardCursorHover -= HandleAnimationState;
+    }
+
+    public void UnMaskCard()
+    {
+        SetUpGameCard(this.cardFrontOffset, this.card, false);
+        cardImageSpace.sprite = cardImage;
+        isMasked = false;
     }
 }

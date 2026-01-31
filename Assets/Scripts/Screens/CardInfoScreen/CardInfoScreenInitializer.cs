@@ -53,33 +53,34 @@ public class CardInfoScreenInitializer : ScreenInitializer<CardInfoScreenData>
     private void InitializeEffectsScrollView()
     {
 
-        Array effects = Enum.GetValues(typeof(effectsEnum));
-        int numberOfEffects = effects.Length;
+        int numberOfEffects = card.cardData.cardEffects.Length;
 
         for (int i = 0; i < numberOfEffects; i++)
         {
-            effectsEnum value = (effectsEnum)effects.GetValue(i);
             InitializeEffectEntry(
-                value,
-                (card.cardData == null) ? false : card.cardData.cardEffects.Contains(value)
+                card.cardData.cardEffects[i]
+                /*//does the card have effects? No? return false. Yes? Does the list of effects contain the current effect (value)
+                (card.cardData == null || card.cardData.cardEffects == null) ?
+                    false : 
+                    card.cardData.cardEffects.Where((effectData effectData) => effectData.effect == value) != null*/
             );
         }
 
     }
 
-    private void InitializeEffectEntry(effectsEnum effect, bool state)
+    private void InitializeEffectEntry(effectData effectData)
     {
         GameObject currentEntryPrefab = Instantiate(effectEntryPrefab, Vector3.zero, Quaternion.identity);
 
         EffectEntryUI effectEntryUI = currentEntryPrefab.AddComponent<EffectEntryUI>();
-        effectEntryUI.representingEffect = effect;
+        effectEntryUI.representingEffect = effectData;
 
         TextMeshProUGUI textArea = currentEntryPrefab.GetComponentInChildren<TextMeshProUGUI>();
-        textArea.SetText(effect.ToString());
+        textArea.SetText(effectData.effect.ToString());
 
         currentEntryPrefab.transform.SetParent(contentObjectEffectsScrollView.transform);
         effectEntries.Add(effectEntryUI);
-        currentEntryPrefab.SetActive(state);
+        //currentEntryPrefab.SetActive(state);
     }
 
 }
