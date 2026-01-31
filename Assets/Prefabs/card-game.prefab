@@ -505,7 +505,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Card
   nameBox: {fileID: 5421177383625993109}
-  cardImage: {fileID: 7014217940656435038}
+  cardImageSpace: {fileID: 7014217940656435038}
   descBox: {fileID: 0}
   damageBox: {fileID: 0}
   effectsScrollViewContentObject: {fileID: 0}

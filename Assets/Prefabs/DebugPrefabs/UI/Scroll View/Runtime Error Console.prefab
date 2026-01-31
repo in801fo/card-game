@@ -108,15 +108,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -147,8 +149,8 @@ GameObject:
   - component: {fileID: 7132462805548160512}
   - component: {fileID: 6852382216151101337}
   m_Layer: 5
-  m_Name: Button (1)
-  m_TagString: createLog
+  m_Name: GenerateLogFile
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -375,15 +377,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -414,8 +418,8 @@ GameObject:
   - component: {fileID: 1521444328586647291}
   - component: {fileID: 5142819328480656316}
   m_Layer: 5
-  m_Name: Button
-  m_TagString: clearErrors
+  m_Name: ClearConsole
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -543,6 +547,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5922235168907731671}
+  - component: {fileID: 1775047954519592426}
   m_Layer: 0
   m_Name: Runtime Error Console
   m_TagString: Untagged
@@ -572,6 +577,20 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 1920, y: 506.0271}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &1775047954519592426
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7901187881876277162}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c00b7d32a5b304448882e248cf631d65, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ErrorConsoleHandler
+  clearConsoleButton: {fileID: 5142819328480656316}
+  generateLogFileButton: {fileID: 6852382216151101337}
 --- !u!1001 &3595939806168761365
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -854,7 +873,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4896533064272449655, guid: 57c4d29aa03d93540ab29dd43aa666e8, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5084761559174370853, guid: 57c4d29aa03d93540ab29dd43aa666e8, type: 3}
       propertyPath: m_AnchorMax.x
@@ -866,11 +885,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5187552627275081294, guid: 57c4d29aa03d93540ab29dd43aa666e8, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5187552627275081294, guid: 57c4d29aa03d93540ab29dd43aa666e8, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5187552627275081294, guid: 57c4d29aa03d93540ab29dd43aa666e8, type: 3}
       propertyPath: m_AnchorMin.x
@@ -878,15 +897,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5867415565961564069, guid: 57c4d29aa03d93540ab29dd43aa666e8, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5970275924353277868, guid: 57c4d29aa03d93540ab29dd43aa666e8, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5970275924353277868, guid: 57c4d29aa03d93540ab29dd43aa666e8, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5970275924353277868, guid: 57c4d29aa03d93540ab29dd43aa666e8, type: 3}
       propertyPath: m_AnchorMin.y

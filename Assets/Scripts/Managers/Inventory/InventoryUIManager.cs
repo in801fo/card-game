@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.Collections;
 using UnityEngine;
 using System.Linq;
+using Unity.VisualScripting;
 
 public class InventoryUIManager : CoordinatedMonoBehaviour
 {
@@ -14,10 +15,14 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
     [SerializeField] private float cardReshuffleSpeed = 2.5f;
     [SerializeField] private float yCurveMultiplier;
     [SerializeField] private float cardZDistance;
+    [field: SerializeField] public Sprite maskedCardSprite { get; private set; }
+    public static InventoryUIManager Instance{ get; private set; }
     
     public int displayableCards { get; private set; } = 0;
     
-    private List<CardGraphics> cards;
+    public List<CardGraphics> cards { get; private set; }
+
+
     private MeshRenderer referenceCardRenderer;
 
     private float spaceOccupiedByCard;
@@ -33,16 +38,14 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
     /// </summary>
     private float cardsWorldWidth;
 
+
     protected override void Awake()
     {
         base.Awake();
         defaultCameraDistance += Camera.main.nearClipPlane + cardZDistance;
-        CardInteractionManager.OnCardHold += HandleCardHold;
-        CardInteractionManager.OnCardRelease += HandleCardRelease;
-        Card.OnCardUseReady += HandleCardUse;
+        if (Instance == null) Instance = this;
+        else Destroy(this.gameObject);
     }
-
-    
 
     protected override void Beginning()
     {
@@ -51,9 +54,30 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
         cardsWorldWidth = referenceCardRenderer.bounds.max.x - referenceCardRenderer.bounds.min.x;
         spaceOccupiedByCard = cardsWorldWidth + (cardsWorldWidth * (spacingCards - 1));
 
-        InventoryManager.OnCardAddedToHandDeck += HandleCardAdded;
+        CardInteractionManager.OnCardHold += HandleCardHold;
+        CardInteractionManager.OnCardRelease += HandleCardRelease;
+        Card.OnCardUseReady += HandleCardUse;
 
         HandleCardGeneration();
+
+        InventoryManager.OnCardAddedToHandDeck += HandleCardAdded;
+        InventoryManager.OnGroupCardAddedToHandDeck += HandleGroupCardsAdded;
+        InventoryManager.OnCardRemovedFromHandDeck += HandleCardRemoved;
+        
+    }
+
+    private void HandleCardRemoved(CardScriptable scriptable)
+    {
+        int indexInList = cards.FindIndex((CardGraphics cardGraphics) => cardGraphics.card.cardData == scriptable);
+        if (indexInList == -1)
+        {
+            RuntimeMsg.Warning("Tried to remove inexistent card", $"Passed card which was not found: {scriptable.ToString()}");
+            return;
+        }
+        Destroy(cards[indexInList].gameObject);
+        cards.RemoveAt(indexInList);
+        
+        HandleAnimateCards();
     }
 
     private void HandleCardRelease(Card cardHolding)
@@ -73,7 +97,6 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
 
         InventoryManager.Instance.AddCardAt(cardHolding.cardData, i, true);
         this.cards.Insert(i, cardGraphics);
-        //------------Move null coroutine to released position---------------
 
         HandleAnimateCards();
         currentCardHolded = null;
@@ -92,9 +115,17 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
         }
 
         //temporarily remove the card from the inventory 
-        InventoryManager.Instance.RemoveCard(cardGraphics.card);
+        InventoryManager.Instance.RemoveCard(cardGraphics.card, true, false);
         this.cards.Remove(cardGraphics);
         currentCardHolded = cardGraphics;
+    }
+
+    private void HandleGroupCardsAdded(List<CardScriptable> cards)
+    {
+        for (int i = 0; i < cards.Count; i++)
+        {
+            HandleCardAdded(cards[i]);
+        }
     }
 
     private void HandleCardAdded(CardScriptable scriptable)
@@ -188,9 +219,11 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
         int currentDisplayable = displayableCards;
         float currentOccupied = spaceOccupiedByCard;
         
-        CalculateDisplayebleCards();
+        CalculateDisplayableCards();
         UpdateCardSpace();
 
+        //handles the update for the card's position after something has changed in the hand deck, like a removal or adding
+        //of a card
         if (cards != null && (currentDisplayable != displayableCards || currentOccupied != spaceOccupiedByCard))
             HandleAnimateCards();
 
@@ -213,8 +246,9 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
 
     private void HandleCardGeneration()
     {
-        //here need to establish the number of displayable cards so to be able to move the extra ones in the side deck and not have to spawn them
-        CalculateDisplayebleCards();
+        //here need to establish the number of displayable cards so to be able to move the extra ones 
+        //in the side deck and not have to spawn them
+        CalculateDisplayableCards();
         InventoryManager.Instance.MoveCardsToSideDeck(displayableCards - 1, InventoryManager.Instance.GetHandDeckCount() - displayableCards);
         this.cards = GetCardGraphicsFromCardList(CardGenerationManager.Instance.GenerateCards(displayableCards));
         cardsCoroutines = new Coroutine[this.cards.Count];
@@ -252,8 +286,17 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
 
     private Vector3 CalculateCardTargetPosition(float borderStartX, int cardsBeforeCurrent)
     {
-        float yOffset = (cards != null /*&& cards.Count % 2 == 1*/) ? Mathf.Abs((cards.Count / 2) - cardsBeforeCurrent) : 0;
+        //it's the offset from the worldStartSpawn
+        int halfHandDeck = InventoryManager.Instance.handDeck.Count / 2;
+        float yOffset = (cards != null) ? Mathf.Abs(halfHandDeck - cardsBeforeCurrent) : 0;
         float y = worldStartSpawn.y - (yOffset * yCurveMultiplier);
+        
+        //(worldStartSpawn.y - (1 * yCurveMultiplier)) is the y at which the card sitting at the (halfDeck + 1) position resides in the case in which the
+        //count of cards in the handDeck is even
+        //all that is required to surmount the difference in height between the two halves is the difference between the last and first card of the two halves
+        //by adding the difference between the two to all cards of the first half the difference is eliminated
+        y += (InventoryManager.Instance.handDeck.Count % 2 == 0 && cardsBeforeCurrent < halfHandDeck) ?
+            worldStartSpawn.y - (worldStartSpawn.y - yCurveMultiplier) : 0;
         return
             CalculateCardTargetPosition(borderStartX, cardsBeforeCurrent, y, worldStartSpawn.z);
     }
@@ -261,7 +304,7 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
     /// <summary>
     /// Calculates the number of cards displayable at any time 
     /// </summary>
-    private void CalculateDisplayebleCards()
+    private void CalculateDisplayableCards()
     {
         float cardPixelsWidth = GetRefCardWidth();
         //amount of space occupied by a single card

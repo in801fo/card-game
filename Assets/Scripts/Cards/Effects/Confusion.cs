@@ -1,10 +1,20 @@
-using System;
-public class Confusion : IEffect
+public class Confusion : Effect
 {
-    public static float secondsDuration { get; set; }
-    public static int turnDuration { get; set; }
-    public static Action<consequenceTarget, int, float, effectsEnum> OnEffectApplied { get; set; }
-    public static consequenceTarget target { get; set; }
-    public static effectsEnum effectAsEnum = effectsEnum.CONFUSION;
+    public Confusion(effectData parameters) : base(parameters)
+    {
+    }
 
+    public override effectsEnum GetEffectAsEnum()
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public override void TerminateEffect()
+    {
+    }
+
+    protected override void HandleLogic()
+    {
+        throw new System.NotImplementedException();
+    }
 }

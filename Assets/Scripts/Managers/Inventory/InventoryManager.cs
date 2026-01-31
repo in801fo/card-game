@@ -1,18 +1,23 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class InventoryManager : CoordinatedMonoBehaviour
 {
-    [SerializeField] private List<CardScriptable> handDeck = new List<CardScriptable>();
+    [SerializeField] public List<CardScriptable> handDeck { get; private set;} = new List<CardScriptable>();
 
     private List<CardScriptable> sideDeck = new List<CardScriptable>();
 
     public static Action<CardScriptable> OnCardAddedToHandDeck;
+    public static Action<List<CardScriptable>> OnGroupCardAddedToHandDeck;
     public static Action<CardScriptable, int> OnCardMoved;
+    public static Action<CardScriptable> OnCardRemovedFromHandDeck;
 
     public static InventoryManager Instance;
     public Action OnZeroCards;
+
+    private CardScriptable[] allCardScriptables;
 
     protected override void Awake()
     {
@@ -23,7 +28,10 @@ public class InventoryManager : CoordinatedMonoBehaviour
 
     protected override void Beginning()
     {
-        Card.OnCardUseReady += HandleCardUse;
+        //RuntimeMsg.Info(Directory.Exists("D:\\Github\\card-game\\Assets\\Scriptables\\Cards\\Character").ToString());
+        allCardScriptables = Resources.LoadAll<CardScriptable>("Scriptables");
+
+        Card.OnCardZeroUsages += OnCardZeroUsages;
     }
 
     public void AddCard(CardScriptable card, bool signal = true)
@@ -40,8 +48,34 @@ public class InventoryManager : CoordinatedMonoBehaviour
 
     protected override void ReadyUpdate()
     {
-        if (Input.GetKeyDown(KeyCode.Return)) 
-            AddCard((CardScriptable)ScriptableObject.CreateInstance(nameof(CardScriptable)));
+        if (Input.GetKeyDown(KeyCode.Return))
+        {
+            LoadAllCardsInInventory();
+        }
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            RemoveAllCards();
+        }
+    }
+
+    private void RemoveAllCards()
+    {
+        for (int i = 0; i < handDeck.Count; i++)
+        {
+            RemoveCard(handDeck[i]);
+        }
+    }
+    
+    
+    private void LoadAllCardsInInventory()
+    {
+        for (int i = 0; i < allCardScriptables.Length; i++)
+        {
+            AddCard(allCardScriptables[i], false);
+        }
+
+        OnGroupCardAddedToHandDeck.Invoke(allCardScriptables.ToList());
+
     }
 
     /// <summary>
@@ -49,28 +83,23 @@ public class InventoryManager : CoordinatedMonoBehaviour
     /// </summary>
     /// <param name="card">The card to remove</param>
     /// <param name="removeFromHandDeck">If true, the spefified card will be removed from the hand deck otherwhise from the card deck</param>
-    public void RemoveCard(CardScriptable card, bool removeFromHandDeck = true)
+    public void RemoveCard(CardScriptable card, bool removeFromHandDeck = true, bool alert = true)
     {
 
         if (removeFromHandDeck)
         {
             handDeck.Remove(card);
+            if(alert) OnCardRemovedFromHandDeck?.Invoke(card);
             if (handDeck.Count == 0) OnZeroCards?.Invoke();
             return;
         }
 
         sideDeck.Remove(card);
     }
-    
-    private void HandleCardUse(Card card)
-    {
-        RemoveCard(card, true);
-    }
 
-
-    public void RemoveCard(Card card, bool removeFromHandDeck = true)
+    public void RemoveCard(Card card, bool removeFromHandDeck = true, bool alert = true)
     {
-        RemoveCard(card.cardData, removeFromHandDeck);
+        RemoveCard(card.cardData, removeFromHandDeck, alert);
     }
 
     /// <summary>
@@ -103,9 +132,13 @@ public class InventoryManager : CoordinatedMonoBehaviour
         return handDeck.Count;
     }
 
+    private void OnCardZeroUsages(Card card)
+    {
+        RemoveCard(card.cardData);
+    }
+
     private void OnDestroy()
     {
-        Card.OnCardUseReady -= HandleCardUse;
         GameManager.OnDoneGenerating -= Beginning;
     }
 }

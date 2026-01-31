@@ -1,16 +1,20 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using AYellowpaper.SerializedCollections;
 using UnityEngine;
 
-public class GameScreensManager : MonoBehaviour
+public class ScreensManager : MonoBehaviour
 {
     [SerializedDictionary("Screen Name", "Screen")]
     [SerializeField] private SerializedDictionary<string, GameObject> screens;
-    public static GameScreensManager Instance;
-    private static KeyValuePair<string, GameObject> currentScreen = new KeyValuePair<string, GameObject>(null, null);
+    public static ScreensManager Instance;
+    public static Action<string> OnScreenClosure;
+    public static Action<KeyValuePair<string, GameObject>> OnScreenOpen;
+    //public static Action<string> OnScreenHide;
+
+
+    private static Dictionary<string, GameObject> currentlyActiveScreens = new Dictionary<string, GameObject>();
+
 
     private void Awake()
     {
@@ -18,50 +22,44 @@ public class GameScreensManager : MonoBehaviour
         else Destroy(this.gameObject);
     }
 
-    public GameObject SpawnScreen(string screenID)
+    public GameObject SpawnScreen<T>(string screenID)
     {
         //if another screen is being used or an instance of the requested screen is already on screen return a reference to it
-        if (currentScreen.Value != null && screenID == currentScreen.Key) return currentScreen.Value;
-        currentScreen = new KeyValuePair<string, GameObject>
+        if (currentlyActiveScreens.ContainsKey(screenID)) return currentlyActiveScreens[screenID];
+        KeyValuePair<string, GameObject> currentScreen = new KeyValuePair<string, GameObject>
         (
             screenID,
             Instantiate(screens[screenID], Vector3.zero, Quaternion.identity)
         );
-        
+
+        //ought'ta set the screen ID of the screen
+        currentScreen.Value.GetComponent<ScreenInitializer<T>>().screenID = screenID;
+
+        currentlyActiveScreens.Add(currentScreen.Key, currentScreen.Value);
+
+        OnScreenOpen?.Invoke(currentScreen);
+
         return currentScreen.Value;
 
     }
 
-    //TODO: move somewhere else, maybe its own manager
-    /// <summary>
-    /// Creates a UI screen to ask the player which players to damage
-    /// </summary>
-    /// <param name="localExclusive">Should the local player be excluded from the damage</param>
-    /// <returns></returns>
-    public PlayerConsequenceScreenHandler AskForPlayerGroup(int players, consequenceTarget target)
+    public static void CloseScreen(string screenID)
     {
-        SpawnScreen("playerConsequence");
-        currentScreen.Value.GetComponent<ScreenInitializer<playerConsequenceScreenInitializerStruct>>()
-            .Initialize(new playerConsequenceScreenInitializerStruct()
-                {
-                    playersInfo = GameManager.playersDict.Values.ToList(),
-                    screenHeading = $"Select {players} players ({players} left)",
-                    target = target,
-                    maxCount = players
-                });
-        PlayerConsequenceScreenHandler screenHandler = currentScreen.Value.GetComponent<PlayerConsequenceScreenHandler>();
+        if (!currentlyActiveScreens.ContainsKey(screenID))
+        {
+            RuntimeMsg.Error("Unable to close screen", "The requested screen does not exist!");
+            return;
+        }
 
-        return screenHandler;
+        OnScreenClosure?.Invoke(screenID);
+        currentlyActiveScreens.Remove(screenID);
     }
 
-    public PlayerConsequenceScreenHandler AskForSinglePlayer(consequenceTarget target)
-    {
-        return AskForPlayerGroup(1, target);
-    }
 
-    public static void CloseCurrentScreen()
+    //not using currently
+    /*public static void OnHideCurrentScreen()
     {
-        Destroy(currentScreen.Value);
-        currentScreen = new KeyValuePair<string, GameObject>();
-    }
+        OnScreenHide?.Invoke(currentScreen.Key);
+        currentScreen.Value.GetComponent<Renderer>().enabled = false;
+    }*/
 }

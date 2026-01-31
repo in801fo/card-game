@@ -29,11 +29,11 @@ public class CardGenerationManager : MonoBehaviour
     {
         if (!Instance) Instance = this;
         else Destroy(this);
-        Card.OnCardUseReady += HandleCardUse;
+        Card.OnCardZeroUsages += HandleCardZeroUsages;
         InventoryManager.OnCardMoved += HandleCardMoved;
     }
 
-    private void HandleCardUse(Card card)
+    private void HandleCardZeroUsages(Card card)
     {
         playerCards.Remove(card);
     }

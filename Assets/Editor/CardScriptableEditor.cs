@@ -1,42 +1,47 @@
 
-using System;
-using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
-using UnityEditor.Rendering;
 using UnityEngine;
 
-[CustomEditor(typeof(CardScriptable))]
+[CustomEditor(typeof(CardScriptable)), CanEditMultipleObjects]
 public class CardScriptableEditor : Editor
 {
     private FieldInfo Name;
     private FieldInfo Desc;
     private FieldInfo cardType;
     private FieldInfo damageAmount;
-    private FieldInfo cardEffects;
+    private SerializedProperty cardEffects;
     private FieldInfo consequenceTarget;
     private FieldInfo numberOfAffectedPlayers;
     private SerializedProperty _affectedTags;
     private FieldInfo heals;
+    private FieldInfo hasSoundEffect;
+    private SerializedProperty onUseSFXArr;
+    private FieldInfo maxCardUsages;
 
-    private CardScriptable current;
+    //private CardScriptable target;
 
     private bool showTags;
+    private bool showEffects;
+    private bool showSoundEffects;
 
     private void OnEnable()
     {
 
-        current = target as CardScriptable;
+        //target = target as CardScriptable;
 
-        Name = GetBackingField(current, "Name");
-        Desc = GetBackingField(current, "Description");
-        cardType = GetBackingField(current, "Type");
-        damageAmount = GetBackingField(current, "damageAmount");
-        cardEffects = GetBackingField(current, "cardEffects");
-        consequenceTarget = GetBackingField(current, "consequenceTarget");
-        numberOfAffectedPlayers = GetBackingField(current, "numberOfAffectedPlayers");
-        heals = GetBackingField(current, "Heals");
+        Name = GetBackingField(target, "Name");
+        Desc = GetBackingField(target, "Description");
+        cardType = GetBackingField(target, "Type");
+        damageAmount = GetBackingField(target, "damageAmount");
+        cardEffects = serializedObject.FindProperty("cardEffects");
+        consequenceTarget = GetBackingField(target, "consequenceTarget");
+        numberOfAffectedPlayers = GetBackingField(target, "numberOfAffectedPlayers");
+        heals = GetBackingField(target, "Heals");
         _affectedTags = serializedObject.FindProperty("affectedTags");
+        hasSoundEffect = GetBackingField(target, "hasSoundEffect");
+        onUseSFXArr = serializedObject.FindProperty("onUseSoundEffect");
+        maxCardUsages = GetBackingField(target, "maxCardUsages");
     }
 
 
@@ -44,56 +49,96 @@ public class CardScriptableEditor : Editor
     {
         EditorGUI.BeginChangeCheck();
         serializedObject.Update();
-        Name.SetValue(current, EditorGUILayout.TextField("Name", (string)Name.GetValue(current)));
+        Name.SetValue(target, EditorGUILayout.TextField("Name",GetFieldValue<string>(Name)));
         EditorGUILayout.LabelField("Description");
-        Desc.SetValue(current, EditorGUILayout.TextArea((string)Desc.GetValue(current), new GUILayoutOption[]
+        Desc.SetValue(target, EditorGUILayout.TextArea(GetFieldValue<string>(Desc), new GUILayoutOption[]
         {
-            GUILayout.Height(25)
+            GUILayout.Height(100),
         }));
 
-        cardType.SetValue(current, (int)(cardTypeEnum)EditorGUILayout.EnumPopup("Card Type", (cardTypeEnum)cardType.GetValue(current)));
+        cardType.SetValue(target, (int)(cardTypeEnum)EditorGUILayout.EnumPopup("Card Type", GetFieldValue<cardTypeEnum>(cardType)));
 
-        if ((cardTypeEnum)cardType.GetValue(current) != cardTypeEnum.CHARACTER)
+        if (IsCharacterCard())
         {
-            heals.SetValue(current, (bool)EditorGUILayout.Toggle("Heals", (bool)heals.GetValue(current)));
-            
-            string damageLable = ((bool)heals.GetValue(current)) ? "Healing amount" : "Damage";
-            
-            damageAmount.SetValue(current, EditorGUILayout.Slider(damageLable, (float)damageAmount.GetValue(current), 0, HpManager.maxHp));
-            consequenceTarget.SetValue(current, (consequenceTarget)EditorGUILayout.EnumPopup("Target", (consequenceTarget)consequenceTarget.GetValue(current)));
-            //do card effects here
+            EditorUtility.SetDirty(target);
+            return;
         }
 
-        if ((consequenceTarget)consequenceTarget.GetValue(current) == global::consequenceTarget.SPECIFIC_GROUP_INC ||
-            ((consequenceTarget)consequenceTarget.GetValue(current) == global::consequenceTarget.SPECIFIC_GROUP_EX))
-                numberOfAffectedPlayers.SetValue(current, EditorGUILayout.IntField("Number Of Affected Players", (int)numberOfAffectedPlayers.GetValue(current)));
+        EditorGUILayout.Separator();
 
-        if ((int)numberOfAffectedPlayers.GetValue(current) == -1) {
-            EditorGUI.indentLevel = 1;
-            showTags = EditorGUILayout.BeginFoldoutHeaderGroup(showTags, "Card's Affected Tags");
+        heals.SetValue(target, (bool)EditorGUILayout.Toggle("Heals", GetFieldValue<bool>(heals)));
 
-            if (showTags)
-            {
-                _affectedTags.arraySize = EditorGUILayout.IntField(_affectedTags.arraySize);
-                HandleArray(_affectedTags.arraySize);
-            }
+        string damageLable = ((bool)heals.GetValue(target)) ? "Healing amount" : "Damage";
+
+        damageAmount.SetValue(target, EditorGUILayout.Slider(damageLable, GetFieldValue<float>(damageAmount), 0, HpManager.maxHp));
+
+        maxCardUsages.SetValue(target, (int)EditorGUILayout.Slider("Max Card Usages", GetFieldValue<int>(maxCardUsages), 0, CardScriptable.maxCardUsagesConst));
+
+        consequenceTarget.SetValue(target, (consequenceTarget)EditorGUILayout.EnumPopup("Target", GetFieldValue<consequenceTarget>(consequenceTarget)));
+        //do card effects here
+
+
+        if ((consequenceTarget)consequenceTarget.GetValue(target) == global::consequenceTarget.SPECIFIC_GROUP_INC ||
+            ((consequenceTarget)consequenceTarget.GetValue(target) == global::consequenceTarget.SPECIFIC_GROUP_EX))
+        {
+            numberOfAffectedPlayers.SetValue(target, EditorGUILayout.IntField("Number Of Affected Players", GetFieldValue<int>(numberOfAffectedPlayers)));
             
-            EditorGUI.indentLevel = 0;
-            EditorGUILayout.EndFoldoutHeaderGroup();
+            if ((int)numberOfAffectedPlayers.GetValue(target) == -1)
+                HandleArray(_affectedTags, "Affect players with tags", "Affected Tag", ref showTags);
         }
-        //EditorGUILayout.PropertyField(serializedObject.FindProperty("affectedTags"));//affectedTags.SetValue(current, (playerTagsEnum)EditorGUILayout.Foldout("Affected tags", (playerTagsEnum)affectedTags.GetValue(current)));
+
+        EditorGUILayout.Separator();
+
+        HandleArray(cardEffects, "Inflicting Effects", "Effect", ref showEffects);
+
+        EditorGUILayout.Separator();
+
+        hasSoundEffect.SetValue(target, EditorGUILayout.Toggle("Has Sound Effect", GetFieldValue<bool>(hasSoundEffect)));
+
+        if (GetFieldValue<bool>(hasSoundEffect))
+            HandleArray(onUseSFXArr, "Possible SFX on use", "SFX", ref showSoundEffects);
+        
+        //makes is so that the editor, on closure, writes the modified data on disk
+        EditorUtility.SetDirty(target);
+        //EditorGUILayout.PropertyField(serializedObject.FindProperty("affectedTags"));//affectedTags.SetValue(target, (playerTagsEnum)EditorGUILayout.Foldout("Affected tags", (playerTagsEnum)affectedTags.GetValue(target)));
 
 
         if (EditorGUI.EndChangeCheck()) serializedObject.ApplyModifiedProperties();
     }
 
-    private void HandleArray(int arrSize)
+    private T GetFieldValue<T>(FieldInfo fieldInfo)
+    {
+        return (T)fieldInfo.GetValue(target);
+    }
+
+    private void HandleArray(SerializedProperty property, string arrayLable, string elementLable, ref bool foldoutTracker)
+    {
+        EditorGUI.indentLevel = 1;
+        foldoutTracker = EditorGUILayout.BeginFoldoutHeaderGroup(foldoutTracker, arrayLable);
+
+        if (foldoutTracker)
+        {
+            property.arraySize = EditorGUILayout.IntField(property.arraySize);
+            HandleArrayElements(property.arraySize, property, elementLable);
+        }
+
+        EditorGUI.indentLevel = 0;
+        EditorGUILayout.EndFoldoutHeaderGroup();
+
+    }
+
+    private bool IsCharacterCard()
+    {
+        return (cardTypeEnum)cardType.GetValue(target) == cardTypeEnum.CHARACTER;
+    }
+
+    private void HandleArrayElements(int arrSize, SerializedProperty property, string arrayElementLable)
     {
         for (int i = 0; i < arrSize; i++)
         {
-            var affectedTagsElem = _affectedTags.GetArrayElementAtIndex(i);
+            var affectedTagsElem = property.GetArrayElementAtIndex(i);
             EditorGUI.indentLevel = 2;
-            EditorGUILayout.PropertyField(affectedTagsElem, new GUIContent("Affected Tag " + i));
+            EditorGUILayout.PropertyField(affectedTagsElem, new GUIContent(arrayElementLable + " " + i));
         }
 
     }

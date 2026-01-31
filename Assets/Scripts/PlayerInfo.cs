@@ -13,10 +13,11 @@ public struct playerInfo : INetworkSerializable, IEquatable<playerInfo>
     public pronouns Pronouns;
     public ulong playerId;
     public ushort playerTagsMask;
+    public ushort playerEffectsMask;
 
     public bool Equals(playerInfo other)
     {
-        return this.playerId == other.playerId;
+        return base.Equals(other);
     }
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
@@ -25,6 +26,12 @@ public struct playerInfo : INetworkSerializable, IEquatable<playerInfo>
         serializer.SerializeValue(ref Pronouns);
         serializer.SerializeValue(ref playerId);
         serializer.SerializeValue(ref playerTagsMask);
+        serializer.SerializeValue(ref playerEffectsMask);
+    }
+
+    public override string ToString()
+    {
+        return $"PlayerId: {playerId}\nPlayerName: {Name}\nPrnonouns: {Pronouns}\nPlayerTagMask: {playerTagsMask}";
     }
 
     //TODO: add more info that needs to be carried out into the game from other screens, such as:

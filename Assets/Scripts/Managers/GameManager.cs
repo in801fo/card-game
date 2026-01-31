@@ -1,172 +1,332 @@
-using System;
 using System.Collections.Generic;
 using Unity.Netcode;
-using Unity.VisualScripting;
 using UnityEngine;
 using Random = UnityEngine.Random;
+using System;
+using System.Linq;
 
 public class GameManager : NetworkBehaviour
 {
-
     [SerializeField] private DebugUIManager debugUIManager;
     [SerializeField] private InventoryManager inventoryManager;
-    [SerializeField] private GameScreensManager screensManager;
+    [SerializeField] private ScreensManager screensManager;
     [SerializeField] private InventoryUIManager inventoryUIManager;
     [SerializeField] private CardGenerationManager cardGenerationManager;
     [SerializeField] private CardInteractionManager cardInteractionManager;
     [SerializeField] private HpManager healthManager;
     [SerializeField] private HpUIManager healthUIManager;
-    [SerializeField] private NetworkUIHandler networkUIHandler;
+    [SerializeField] private PlayerMaskAssigner playerMaskAssigner;
+    [SerializeField] private AudioManager audioManager;
     [SerializeField] private NetworkManager networkManager;
+    [SerializeField] private GameObject networkUI;
 
+    [SerializeField] private EffectsManager effectManager;
+
+    private NetworkUIHandler networkUIHandler;
+
+    private InventoryUIManager inventoryUIManagerInstance;
+
+    /// <summary>
+    /// A dictionary with: 
+    /// <para><strong>Key</strong>: the players's client ids</para>
+    /// <para><strong>Value</strong>: the playerInfo relating to a player</para>
+    /// Only used for ease of access to player data
+    /// </summary>
     public static Dictionary<ulong, playerInfo> playersDict { get; private set; } = new Dictionary<ulong, playerInfo>();
-    public static NetworkVariable<int> playerCount { get; private set; } = new NetworkVariable<int>(0);
-    private static List<GameObject> managers = new List<GameObject>();
-
-    public static Action OnDoneGenerating;
-
-    private static int count;
-
-    private static int actualInheriting;
-
-    private const string namePrefixWhenNameEmpty = "CSN"; //Coglione Senza Nome
-
+    
     /// <summary>
     /// This network list is used to then create the dictionary on the single clients,
     /// the playersNetList si synchronized across all clients, the dictionary is not.
     /// The dictionary only exists as an easier way to save player refs
     /// </summary>
-    private NetworkList<playerInfo> playersNetList = new NetworkList<playerInfo>();
+    private NetworkList<playerInfo> playersNetList = new NetworkList<playerInfo>(null, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    public static playerInfo localPlayerInfo { get; private set; }
+
+    /// <summary>
+    /// Stores the player username if no username was provided on load
+    /// </summary>
+    public static string noUsernameProvidedUsernameFallback;
+
+    private static List<GameObject> managers = new List<GameObject>();
+
+    /// <summary>
+    /// Event called once all CoordinatedMonoBehaviours have finished initializing
+    /// </summary>
+    public static Action OnDoneGenerating;
+
+    /// <summary>
+    /// The number of CoordinatedMonoBehaviours which signaled finishing their initialization
+    /// </summary>
+    private static int coordinatedMonoBehaviourCount;
+
+    /// <summary>
+    /// The number of scripts actually inheriting from CoordinatedMonobehaviour
+    /// </summary>
+    private static int actualInheriting;
+
+    /// <summary>
+    /// Prefix used while generating the username for a player whom didn't input a username
+    /// </summary>
+    private const string namePrefixWhenNameEmpty = "CSN"; //Coglione Senza Nome
+
+    public static GameManager Instance { get; private set; }
 
     private void Awake()
     {
+        DontDestroyOnLoad(this.gameObject);
+        DontDestroyOnLoad(HandleScreenManager());
+        HandleNetworkManagers();
+
         managers.Add(Instantiate(debugUIManager.gameObject));
-        DebugUIManager.GenerateOnlyErrorConsole();
 
-        managers.Add(Instantiate(networkManager.gameObject));
-        managers.Add(Instantiate(networkUIHandler.gameObject));
+        if (Instance == null) Instance = this;
+        else Destroy(this.gameObject);
+    }
+    
+    public override void OnNetworkSpawn()
+    {
+        NetworkManager.OnClientConnectedCallback += HandleOnLocalClientConnected;
+        NetworkManager.OnServerStarted += HandleLocalIsServer;
+        NetworkManager.OnConnectionEvent += OnClientDisconnect;
+        playersNetList.OnListChanged += HandleListChanged;
+    }
 
-        NetworkManager.Singleton.OnClientConnectedCallback += HandleOnLocalClientConnected;
+    private void HandleListChanged(NetworkListEvent<playerInfo> changeEvent)
+    {
+        switch (changeEvent.Type)
+        {
+            case NetworkListEvent<playerInfo>.EventType.Add:
+                SafeAddPlayerToDictionary(changeEvent.Value, changeEvent.Value.playerId);
+                break;
+            case NetworkListEvent<playerInfo>.EventType.Insert:
+                //Tested: when inserted the previousValue == the inserted value
+                SafeAddPlayerToDictionary(changeEvent.Value, changeEvent.Value.playerId);
+                break;
+            case NetworkListEvent<playerInfo>.EventType.Remove:
+                SafeRemovePlayerFromDictionary(changeEvent.Value.playerId);
+                break;
+            case NetworkListEvent<playerInfo>.EventType.RemoveAt:
+                SafeRemovePlayerFromDictionary(changeEvent.Value.playerId);
+                break;
 
-        //only happens on the server
-        NetworkUIHandler.OnGameStart += HandleGameStart;
+            case NetworkListEvent<playerInfo>.EventType.Clear:
+                playersDict.Clear();
+                break;
+            case NetworkListEvent<playerInfo>.EventType.Value:
+                //using the PreviousValue.playerId as the new Value could've have changed it and in the dictionary
+                //there would still be the old playerId
+                SafeModifyPlayerInDictionary(changeEvent.Value, changeEvent.PreviousValue.playerId);
+                break;
+            case NetworkListEvent<playerInfo>.EventType.Full:
+                RuntimeMsg.Error("Sorry, didn't have time to test this one out",
+                    @"Haven't had the time to test this eventuality, 
+                        please tell me as in much as great detail as you can remember. 
+                        \nNetworkListEvent<playerInfo>.EventType.Full HAPPENED!!");
+                break;
+        }
+    }
+
+    #region Handle Disconnect
+
+    private void OnClientDisconnect(NetworkManager manager, ConnectionEventData data)
+    {
+        if (data.EventType == ConnectionEvent.ClientDisconnected)
+        {
+            //i'm the client which disconencted and I must handle it from my perspective
+            if (!IsServer)
+            {
+                HandleLocalClientDisconnected();
+            }
+            //i'm the server and I must handle all
+            else
+                HandleServerClientDisconnect(data);
+        }
+
+
+    }
+
+    private void HandleServerClientDisconnect(ConnectionEventData data)
+    {
+        RuntimeMsg.Info($"Client: {data.ClientId} has just disconnected!");
+        //remove the player from the net list.
+        playersNetList.Remove(playersDict[data.ClientId]);
+    }
+
+    private void HandleLocalClientDisconnected()
+    {
+        RuntimeMsg.Info("You have just disconnected!");
+    }
+
+    #endregion
+
+    private void HandleLocalIsServer()
+    {
+        //once the scene has changed to the gameScene it'll trigger on all clients + the host: HandleGameStartClient_Rpc 
+        NetworkManager.SceneManager.OnLoadEventCompleted += (_, _, _, _) => HandleGameStartClient_Rpc();
+    }
+
+
+    public static string GetFallbackUsername()
+    {
+        if (string.IsNullOrEmpty(noUsernameProvidedUsernameFallback)) noUsernameProvidedUsernameFallback = namePrefixWhenNameEmpty + Random.Range(1000, 5000).ToString();
+        return noUsernameProvidedUsernameFallback;
+    }
+    
+    /// <summary>
+    /// Checks if any players contained in the <c>playersDict</c> has any of the tags passed and returns their ids in a list
+    /// </summary>
+    /// <param name="playerTagsEnums">The list of tags of which to check of</param>
+    /// <returns>The list of player ids which have one of the passed tags</returns>
+    public static List<ulong> GetAllPlayersWithTags(playerTagsEnum[] playerTagsEnums)
+    {
+        List<playerInfo> playerInfos = playersDict.Values.ToList();
+        List<ulong> res = new List<ulong>();
+
+        for (int i = 0; i < playerInfos.Count; i++)
+        {
+            for (int j = 0; j < playerTagsEnums.Length; j++)
+            {
+                if (EnumMaskHandler<playerTagsEnum>.HasEnumValueInMask(playerInfos[i].playerTagsMask, playerTagsEnums[j]))
+                {
+                    res.Add(playerInfos[i].playerId);
+                    break;
+                }
+            }
+        }
+
+        return res;
     }
 
     /// <summary>
-    /// This is only called once the local client connects to the server, also calls on the server but not used
+    /// This is only called once the local client connects to the server
     /// </summary>
     /// <param name="obj"></param>
     private void HandleOnLocalClientConnected(ulong obj)
     {
-        if (!IsClient) return;
+        
+        //set the window name only if this is a runtime instance of the game
+#if UNITY_STANDALONE_WIN
+        IntPtr windowInt = WindowUtil.GetActiveWindow();
+        WindowUtil.SetWindowTitle(windowInt, $"Local Client Id: {NetworkManager.LocalClientId}");
+#endif
 
-        RuntimeMsg.Info("You are connected!", $"You have successfully connected to the server (id: {NetworkManager.ServerClientId}), your id is {NetworkManager.LocalClientId}");
+        RuntimeMsg.Info("<color=green>You are connected!</color>", $"You have successfully connected to the server (id: {NetworkManager.ServerClientId}), your id is {NetworkManager.LocalClientId}");
 
-        SignalConnectionToServer_Rpc(string.Empty, (int)pronouns.HEHIM, NetworkManager.LocalClientId);
+        //collect the local player info
+        localPlayerInfo = GetPlayerInfoFromForm();
+
+        SendPlayerInfoToServer_Rpc(localPlayerInfo.Name.ToString(), (int)localPlayerInfo.Pronouns, localPlayerInfo.playerId);
     }
 
     /// <summary>
-    /// Copies all elements from <c>playersNetList</c> to <c>playerDict</c>
+    /// Collect the player data from the handler of the network UI and return it 
     /// </summary>
-    private void InitializePlayersDictionary()
+    /// <returns>The local player's data</returns>
+    private playerInfo GetPlayerInfoFromForm()
     {
-
-        for (int i = 0; i < playersNetList.Count; i++)
-        {
-            playerInfo currentPlayer = playersNetList[i];
-            RuntimeMsg.Info("Players syncing...", $"currentPlayer[{i}] == {currentPlayer.Name}");
-            SafeAddPlayerToDictionary(currentPlayer, currentPlayer.playerId);
-        }
-    }
-
-    [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
-    private void UpdatePlayerDictionaryClient_Rpc()
-    {
-        playersDict.Clear();
-        InitializePlayersDictionary();
-    }
-
-    private void HandleGameStart()
-    {
-        HandleGameStartClient_Rpc();
-    }
-
-    [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
-    private void HandleGameStartClient_Rpc()
-    {
-        RuntimeMsg.Info("Game Started!");
-        InitializePlayersDictionary();
-        HandleSpawnGameManagers();
-        HandleDebugUIGeneration(inventoryUIManager);
-    }
+        playerInfo data = networkUIHandler.playerData;
+        data.playerId = NetworkManager.LocalClientId;
+        return data;
+    } 
 
     private void HandleSpawnGameManagers()
     {
-        HandleScreenManager();
         HandleInventoryGeneration();
         HandleCardGeneration();
         HandleHealthGeneration();
+        if (IsServer)
+        {
+            HandleAudioGeneration();
+            HandlePlayerMaskAssigner();
+            HandleEffectManager();
+        }
 
         //here getting the setting the parent to the managersHolder
         for (int i = 0; i < managers.Count; i++)
         {
             Component[] list = managers[i].GetComponents<Component>();
-            if (list.Length > 2)
+            /*if (list.Length > 2)
                 RuntimeMsg.Warning($"Components list for {managers[i].name} is bigger than 2",
                     $"Amount of component of manager {managers[i].name} is bigger than 2. If the manager inherits from CoordinatedMonoBehaviour you are at risk of not initializing the manager as a requirement for CoordinatedMonoBehaviour type objects is that the script inheriting the class must be in second place. Please check that this is the case.");
-
+            */
+            Component cmp = Array.Find(list, (Component c) => c.GetType().IsSubclassOf(typeof(CoordinatedMonoBehaviour)));
             //here checking if the current manager is subclass of CoordinatedMonoBehaviour, if so incrementing actualInheriting
-            if (list[1].GetType().IsSubclassOf(typeof(CoordinatedMonoBehaviour))) actualInheriting++;
+            if (cmp!=null) actualInheriting++;
         }
 
         //if the number of CoordinatedMonoBehaviours is equal to the actual which inherited that means that all of them have
         //completed their initialization 
-        if (count == actualInheriting)
+        if (coordinatedMonoBehaviourCount == actualInheriting)
             OnDoneGenerating?.Invoke();
 
     }
 
-    #region Managers Generation Handlers
-    private void HandleScreenManager()
+    private void HandleEffectManager()
     {
-        managers.Add(Instantiate(screensManager.gameObject));
+        GameObject effManGO = Instantiate(effectManager.gameObject);
+        managers.Add(effManGO);
+        effManGO.GetComponent<NetworkBehaviour>().NetworkObject.Spawn();
+    }
+
+#region Managers Generation Handlers
+
+    private void HandleNetworkManagers()
+    {
+        managers.Add(Instantiate(networkManager.gameObject));
+        networkUIHandler = Instantiate(networkUI.gameObject).GetComponent<NetworkUIHandler>();
+    }
+
+    private void HandlePlayerMaskAssigner()
+    {
+        
+        managers.Add(Instantiate(playerMaskAssigner.gameObject));
+        managers[managers.Count - 1].GetComponent<NetworkBehaviour>().NetworkObject.Spawn();
+    }
+
+    private void HandleAudioGeneration()
+    {
+        new GameObject("== Audio Manager ==");
+        
+        NetworkBehaviour man = Instantiate(audioManager.gameObject).GetComponent<NetworkBehaviour>();
+        man.NetworkObject.Spawn();
+        managers.Add(man.gameObject);
+    }
+
+    private GameObject HandleScreenManager()
+    {
+        GameObject screenManager = Instantiate(screensManager.gameObject);
+        managers.Add(screenManager);
+        return screenManager;
     }
 
     private void HandleHealthGeneration()
     {
-        GameObject healthHandling = new GameObject("== Health Handling ==");
-        //healthHandling.transform.SetParent(managersHolder.transform);
-        if (IsHost)
+        new GameObject("== Health Handling ==");
+
+        if (IsServer)
         {
             managers.Add(Instantiate(healthManager.gameObject));
             managers[managers.Count - 1].GetComponent<NetworkBehaviour>().NetworkObject.Spawn();
         }
         managers.Add(Instantiate(healthUIManager.gameObject));
-        //        managers[managers.Count - 1].transform.SetParent(healthHandling.transform);
     }
 
     private void HandleCardGeneration()
     {
-        GameObject cardHandling = new GameObject("== Card Handling ==");
-        //cardHandling.transform.SetParent(managersHolder.transform);
+        new GameObject("== Card Handling ==");
 
         managers.Add(Instantiate(cardInteractionManager.gameObject));
-        //managers[managers.Count - 1].transform.SetParent(cardHandling.transform);
         managers.Add(Instantiate(cardGenerationManager.gameObject));
-        //managers[managers.Count - 1].transform.SetParent(cardHandling.transform);
     }
 
     private void HandleInventoryGeneration()
     {
-        GameObject inventoryHandling = new GameObject("== Inventory Handling ==");
-        //inventoryHandling.transform.SetParent(managersHolder.transform);
-
+        new GameObject("== Inventory Handling ==");
         managers.Add(Instantiate(inventoryManager.gameObject));
-        //managers[managers.Count - 1].transform.SetParent(inventoryHandling.transform);
 
-        InventoryUIManager inventoryUiManager = Instantiate(inventoryUIManager.gameObject).GetComponent<InventoryUIManager>();
-        managers.Add(inventoryUiManager.gameObject);
-        //managers[managers.Count - 1].transform.SetParent(inventoryHandling.transform);
+        inventoryUIManagerInstance = Instantiate(inventoryUIManager.gameObject).GetComponent<InventoryUIManager>();
+        managers.Add(inventoryUIManagerInstance.gameObject);
     }
 
     private void HandleDebugUIGeneration(InventoryUIManager inventoryUIManager)
@@ -183,32 +343,62 @@ public class GameManager : NetworkBehaviour
     }
 
     #endregion
-    public static void ValidateInitialization() => count++;
 
+
+#region Network Stuff
+
+    [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
+    private void HandleGameStartClient_Rpc()
+    {
+        RuntimeMsg.Info("Game Started!");
+        SyncDictionaryToPlayerNetList();
+        HandleSpawnGameManagers();
+        HandleDebugUIGeneration(inventoryUIManagerInstance);
+    }
+
+    private void SyncDictionaryToPlayerNetList()
+    {
+        foreach (playerInfo player in playersNetList)
+        {
+            SafeAddPlayerToDictionary(player, player.playerId);
+        }
+    }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void SignalConnectionToServer_Rpc(string username, int pronouns, ulong senderId)
+    public void SendPlayerInfoToServer_Rpc(string username, int pronouns, ulong senderId)
     {
-
         ulong clientId = senderId;
+        string cappedUsername = (username.Length > 61) ? username.Substring(0, 60) : username;
 
         RuntimeMsg.Info($"Client {clientId} Connected!");
 
         playerInfo playerInfo = new playerInfo()
         {
             //need to do this on the server as otherwise, in the case in which a player is without a name the random string wouldn't be syncronized
-            Name = string.IsNullOrEmpty(username) ?
-                namePrefixWhenNameEmpty + Random.Range(1000, 5000).ToString() : username,
+            Name = cappedUsername,
             Pronouns = (pronouns)pronouns,
             playerId = senderId
         };
 
-        //if successful in adding the player to the dictionary then we are sure that the player has never been seen bby the server
+        //if successful in adding the player to the dictionary then we are sure that the player has never been seen 
+        // by the server
         if (SafeAddPlayerToDictionary(playerInfo, clientId))
             playersNetList.Add(playerInfo);
 
     }
 
+    #endregion
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void ModifyLocalPlayerServer_Rpc(playerInfo newPlayerInfo, ulong oldPlayerId)
+    {
+        if (!playersDict.ContainsKey(oldPlayerId)) return;
+
+        int indexOfPlayer = playersNetList.IndexOf(playersDict[oldPlayerId]);
+        playersNetList[indexOfPlayer] = newPlayerInfo;
+    }
+
+    #region Do Stuff Safely To Players Dict
     /// <summary>
     /// Checks for the presence of the give player's id. If found returns false otherwise true
     /// </summary>
@@ -224,38 +414,56 @@ public class GameManager : NetworkBehaviour
         }
 
         playersDict.Add(clientId, player);
-        playerCount.Value = playersDict.Count;
 
         return true;
     }
 
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void HandleUpdateTagsServer_Rpc(ushort newMask, ulong playerId)
+    private bool SafeRemovePlayerFromDictionary(ulong clientId)
     {
-        int indexInList = playersNetList.IndexOf(playersDict[playerId]);
-
-        //dont know why, but is the only way to "update" a value in a networkList
-        playersNetList.RemoveAt(indexInList);
-        playersNetList.Insert(indexInList, new playerInfo()
+        if (!playersDict.ContainsKey(clientId))
         {
-            Name = playersDict[playerId].Name,
-            Pronouns = playersDict[playerId].Pronouns,
-            playerTagsMask = newMask,
-            playerId = playersDict[playerId].playerId
-        });
+            RuntimeMsg.Warning($"Unable to remove {clientId}", $"Player dictionary doesn't contain {clientId}");
+            return false;
+        }
 
-
-        UpdatePlayerDictionaryClient_Rpc();
+        return playersDict.Remove(clientId);
     }
-    
-    //debug
-    
+
+    private bool SafeModifyPlayerInDictionary(playerInfo newInfo, ulong clientId)
+    {
+        if (!playersDict.ContainsKey(clientId))
+        {
+            RuntimeMsg.Warning($"Unable to modify {clientId}", $"Player dictionary doesn't contain {clientId}");
+            return false;
+        }
+
+        if (clientId == localPlayerInfo.playerId) localPlayerInfo = newInfo;
+
+        playersDict[clientId] = newInfo;
+        return true;
+    }
+
+#endregion
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.UpArrow)) 
-            HandleUpdateTagsServer_Rpc(1, OwnerClientId);
+        if (Input.GetKeyDown(KeyCode.D) && IsHost)
+            NetworkManager.DisconnectClient(playersNetList[1].playerId);
+        if (Input.GetKeyDown(KeyCode.S))
+            PrintLocalPlayerTags();
     }
     
+    private void PrintLocalPlayerTags()
+    {
+        List<effectsEnum> tags = EnumMaskHandler<effectsEnum>.ExtractPlayerTagsFromMask(localPlayerInfo.playerEffectsMask);
+        string tagsString = string.Empty;
+        for (int i = 0; i < tags.Count; i++)
+        {
+            tagsString += tags[i].ToString() + "\n";
+        }
+        RuntimeMsg.Info("----Local Player Effects----", tagsString);
+    }
+
+    public static void ValidateInitialization() => coordinatedMonoBehaviourCount++;
 
     //TODO: once the host decides that the amount of player is sufficient make it so it can press a button and the game starts
 

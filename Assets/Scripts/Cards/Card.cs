@@ -1,14 +1,15 @@
 using System;
-using System.Linq;
 using UnityEngine;
 
-/// <summary>
-/// </summary>
 public abstract class Card : MonoBehaviour
 {
     protected bool Initialized;
     public CardScriptable cardData { get; private set; }
     public static Action<Card> OnCardUseReady;
+
+    public int currentCardWear { get; private set; }
+
+    public static Action<Card> OnCardZeroUsages;
 
     public virtual void UseCard()
     {
@@ -24,6 +25,17 @@ public abstract class Card : MonoBehaviour
         if (Initialized) return;
         Initialized = true;
         this.cardData = cardData;
+        currentCardWear = this.cardData.maxCardUsages;
+    }
+
+    public void ReduceCardUse()
+    {
+        if (currentCardWear - 1 <= 0)
+        {
+            OnCardZeroUsages?.Invoke(this);
+            return;
+        }
+        currentCardWear -= 1;
     }
 
 }
