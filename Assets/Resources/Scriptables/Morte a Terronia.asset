@@ -12,23 +12,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f0e4ba4922ff9a049ba339aa4c3dbc8c, type: 3}
   m_Name: Morte a Terronia
   m_EditorClassIdentifier: Assembly-CSharp::CardScriptable
-  <Name>k__BackingField: Morte a Terronia
+  <Name>k__BackingField: Morte a Terronia!
   <Sprite>k__BackingField: {fileID: 0}
-  <Description>k__BackingField: "Infligge danno a tutti i giocatori aventi character
-    cards di origine meridionale.\nSe il giocatore che attiva questa carta disponde
-    esso stesso di una carta del suddetto tipo egli incorrer\xE0 nello stesso danno."
+  <Description>k__BackingField: 
   <Type>k__BackingField: 0
-  <consequenceTarget>k__BackingField: 5
-  <numberOfAffectedPlayers>k__BackingField: -1
+  <consequenceTarget>k__BackingField: 2
+  <numberOfAffectedPlayers>k__BackingField: 0
   <Heals>k__BackingField: 0
-  <damageAmount>k__BackingField: 46
+  <damageAmount>k__BackingField: 25.5
   cardEffects:
   - effect: 1
     doesTurns: 1
-    turnsLeft: 34
+    turnsLeft: 5
     timeLeft: 0
-  <maxCardUsages>k__BackingField: 10
-  affectedTags: 01000000
+  <maxCardUsages>k__BackingField: 2
+  affectedTags: 
   <hasSoundEffect>k__BackingField: 1
   onUseSoundEffect:
   - {fileID: 8300000, guid: 209554b67dca12c4f9803ea3796dbdd8, type: 3}

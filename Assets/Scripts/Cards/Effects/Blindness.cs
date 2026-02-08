@@ -20,6 +20,8 @@ public class Blindness : Effect
 
     public override void TerminateEffect()
     {
+        RuntimeMsg.Info("Effect Terminated");
+
         foreach(CardGraphics card in InventoryUIManager.Instance.cards)
         {
             card.UnMaskCard();

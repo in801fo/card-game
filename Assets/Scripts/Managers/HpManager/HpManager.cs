@@ -23,7 +23,7 @@ public class HpManager : NetworkBehaviour
 
     private Dictionary<ulong, float> playerHps = new Dictionary<ulong, float>();
 
-    private void Awake()
+    public override void OnNetworkSpawn()
     {
         if (Instance == null) Instance = this;
         else Destroy(this);
@@ -85,7 +85,7 @@ public class HpManager : NetworkBehaviour
             playerHps[senderClientId] = playerHpAmount;
         }
     }
-    
+
 
 
     [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
@@ -106,7 +106,7 @@ public class HpManager : NetworkBehaviour
 
     public void IncrementHpServer_Rpc(float amount, ulong playerIds)
     {
-        IncrementHpSpecificGroupServer_Rpc(amount, new ulong[1]{ playerIds });
+        IncrementHpSpecificGroupServer_Rpc(amount, new ulong[1] { playerIds });
     }
 
     /// <summary>
@@ -151,17 +151,23 @@ public class HpManager : NetworkBehaviour
     public void HandleAffectedTagsServer_Rpc(playerTagsEnum[] affectedTags, float amount, bool cardHeals = false)
     {
         List<playerInfo> players = GameManager.playersDict.Values.ToList();
+        //check for every single passed tag...
         for (int i = 0; i < affectedTags.Length; i++)
         {
+            //...if any of the players has it
             foreach (playerInfo player in players)
             {
                 List<playerTagsEnum> currentPlayerTagsEnums = EnumMaskHandler<playerTagsEnum>.ExtractPlayerTagsFromMask(player.playerTagsMask);
-                if (currentPlayerTagsEnums.Contains(affectedTags[i])) { HandleDamageOrHealFromServer(amount, player.playerId, cardHeals); }
+
+                //if a player has the current tag then handle the damage/the health increase
+                if (currentPlayerTagsEnums.Contains(affectedTags[i]))
+                    HandleDamageOrHealFromServer(amount, player.playerId, cardHeals);
             }
         }
     }
 
-    ///<summary> Decides wether the damage inflicted is actually an amount of hps to give to the specified player, 
+    ///<summary> 
+    /// Decides wether the damage inflicted is actually an amount of hps to give to the specified player, 
     /// or just a damage amount, all based on the sign of the provided damage
     /// </summary>     
     private void HandleDamageOrHealFromServer(float damage, ulong affected, bool heals)
@@ -192,5 +198,17 @@ public class HpManager : NetworkBehaviour
         return true;
     }
 
-    
+    public float GetPlayerHps(ulong playerId)
+    {
+        try
+        {
+            return playerHps[playerId];
+        }
+        catch (Exception)
+        {
+            RuntimeMsg.Error($"Unable to get player hp data for player {playerId}");
+            return -1;
+        }
+    }
+
 }

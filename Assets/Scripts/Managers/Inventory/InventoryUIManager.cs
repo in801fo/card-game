@@ -4,6 +4,7 @@ using Unity.Collections;
 using UnityEngine;
 using System.Linq;
 using Unity.VisualScripting;
+using UnityEngine.Rendering.Universal;
 
 public class InventoryUIManager : CoordinatedMonoBehaviour
 {
@@ -194,18 +195,22 @@ public class InventoryUIManager : CoordinatedMonoBehaviour
         int indexOfCard = cards.IndexOf(cardGraphics);
 
         //ofc only do it if the card was at a position below the top one
-        if(indexOfCard < cards.Count-1)
+        if (indexOfCard < cards.Count - 1)
         {
             //move the affected cards (the ones that where after the chosen one) back one cell
             for (int i = indexOfCard; i < cards.Count - 1; i++)
-                cardsCoroutines[i] = cardsCoroutines[i + 1];  
+                cardsCoroutines[i] = cardsCoroutines[i + 1];
         }
         
-        cards.Remove(removeCardObject);
-        Array.Resize(ref cardsCoroutines, cards.Count);
-        Destroy(removeCardObject.gameObject);
+        //if the card has finished its uses
+        if (card.currentCardWear <= 0)
+        {
+            cards.Remove(removeCardObject);
+            Array.Resize(ref cardsCoroutines, cards.Count);
+            Destroy(removeCardObject.gameObject);
+            HandleAnimateCards();
+        }
 
-        HandleAnimateCards();
 
     }
 

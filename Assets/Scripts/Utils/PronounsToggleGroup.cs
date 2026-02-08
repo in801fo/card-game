@@ -13,17 +13,4 @@ public class PronounsToggleGroup : ToggleGroup
     {
         m_Toggles.Find((Toggle t) => t.gameObject.GetComponent<PronounToggle>().representingPronoun == pr).isOn = true;
     }
-
-    /*public void RegisterChildToggles()
-    {
-        PronounToggle[] toggles = GetComponentsInChildren<PronounToggle>();
-
-        foreach (PronounToggle item in toggles)
-        {
-            item.group = this;
-            RegisterToggle(item);
-        }
-    }*/
-
-
 }

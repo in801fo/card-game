@@ -5,6 +5,7 @@ using Unity.Collections;
 using Unity.Netcode;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 //TODO: implement a way to Remove tags (very easy)
 
@@ -63,13 +64,22 @@ public class PlayerMaskAssigner : NetworkBehaviour
         RuntimeMsg.Info($"Added {(effectsEnum)effect} effect to {playerId}'s player mask");
     }
 
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void HandleRemoveEffectFromPlayerDataServer_Rpc(ushort effect, ulong playerId)
+    {
+        SafeHandleRemoveFromMask<effectsEnum>((effectsEnum)effect, playerId);
+        
+        print($"Removed {(effectsEnum)effect} from {playerId}'s mask");
+    }
+
     /// <summary>
     /// Handles the logic of adding values to the player's masks (either of type <c>effectsEnum</c> or <c>playerTagsEnum</c>)
     /// </summary>
     /// <typeparam name="T">The type we're dealing with (either <c>effectsEnum</c> or <c>playerTagsEnum</c>)</typeparam>
     /// <param name="enumValue">The value to add to the masks</param>
     /// <param name="playerId">The id of the player in question</param>
-    public void SafeHandleAddToMask<T>(T enumValue, ulong playerId) where T : Enum
+    private void SafeHandleAddToMask<T>(T enumValue, ulong playerId) where T : Enum
     {
         playerInfo info = GameManager.playersDict[playerId];
 
@@ -84,7 +94,7 @@ public class PlayerMaskAssigner : NetworkBehaviour
         GameManager.Instance.ModifyLocalPlayerServer_Rpc(info, info.playerId);
     }
 
-    public void SafeHandleRemoveFromMask<T>(T enumValue, ulong playerId) where T : Enum
+    private void SafeHandleRemoveFromMask<T>(T enumValue, ulong playerId) where T : Enum
     {
         playerInfo info = GameManager.playersDict[playerId];
 

@@ -194,6 +194,7 @@ public class CardGraphics : MonoBehaviour
 
     public void UnMaskCard()
     {
+        print("Unmasking...");
         SetUpGameCard(this.cardFrontOffset, this.card, false);
         cardImageSpace.sprite = cardImage;
         isMasked = false;

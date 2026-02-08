@@ -1,9 +1,10 @@
-using System.Collections.Generic;
+    using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using Random = UnityEngine.Random;
 using System;
 using System.Linq;
+using Discord.Sdk;
 
 public class GameManager : NetworkBehaviour
 {
@@ -22,12 +23,15 @@ public class GameManager : NetworkBehaviour
 
     [SerializeField] private EffectsManager effectManager;
 
+    [SerializeField] private TurnManager turnManager;
+    [SerializeField] private DiscordManager discordManager;
+
     private NetworkUIHandler networkUIHandler;
 
     private InventoryUIManager inventoryUIManagerInstance;
 
     /// <summary>
-    /// A dictionary with: 
+    /// A dictionary containing player data with respectively as: 
     /// <para><strong>Key</strong>: the players's client ids</para>
     /// <para><strong>Value</strong>: the playerInfo relating to a player</para>
     /// Only used for ease of access to player data
@@ -77,13 +81,21 @@ public class GameManager : NetworkBehaviour
         DontDestroyOnLoad(this.gameObject);
         DontDestroyOnLoad(HandleScreenManager());
         HandleNetworkManagers();
+        HandleDiscordManager();
 
         managers.Add(Instantiate(debugUIManager.gameObject));
 
         if (Instance == null) Instance = this;
         else Destroy(this.gameObject);
     }
-    
+
+    private void HandleDiscordManager()
+    {
+        GameObject dsMan = Instantiate(discordManager.gameObject);
+        DontDestroyOnLoad(dsMan);
+        dsMan.GetComponent<DiscordManager>().StartOAuthFlow();
+    }
+
     public override void OnNetworkSpawn()
     {
         NetworkManager.OnClientConnectedCallback += HandleOnLocalClientConnected;
@@ -166,7 +178,6 @@ public class GameManager : NetworkBehaviour
         NetworkManager.SceneManager.OnLoadEventCompleted += (_, _, _, _) => HandleGameStartClient_Rpc();
     }
 
-
     public static string GetFallbackUsername()
     {
         if (string.IsNullOrEmpty(noUsernameProvidedUsernameFallback)) noUsernameProvidedUsernameFallback = namePrefixWhenNameEmpty + Random.Range(1000, 5000).ToString();
@@ -174,7 +185,7 @@ public class GameManager : NetworkBehaviour
     }
     
     /// <summary>
-    /// Checks if any players contained in the <c>playersDict</c> has any of the tags passed and returns their ids in a list
+    /// Checks if any players contained in the <c>playersDict</c> has any of the passed tags and returns their ids in a list
     /// </summary>
     /// <param name="playerTagsEnums">The list of tags of which to check of</param>
     /// <returns>The list of player ids which have one of the passed tags</returns>
@@ -240,6 +251,10 @@ public class GameManager : NetworkBehaviour
             HandleAudioGeneration();
             HandlePlayerMaskAssigner();
             HandleEffectManager();
+            //TODO: improve
+            NetworkBehaviour turnMan = Instantiate(turnManager.gameObject).GetComponent<NetworkBehaviour>();
+            turnMan.NetworkObject.Spawn();
+            managers.Add(turnMan.gameObject);
         }
 
         //here getting the setting the parent to the managersHolder

@@ -1,4 +1,5 @@
 using System;
+using TMPro;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,12 +10,16 @@ public class NetworkUIHandler : MonoBehaviour
     [SerializeField] private Button clientButton;
     [SerializeField] private Button startGameButton;
     [SerializeField] private Button openPlayerDataFormButton;
+    [SerializeField] private TextMeshProUGUI clientMessageText;
     private GameObject playerDataForm;
 
     public static Action OnGameStart;
     public playerInfo playerData { get; private set; } = new playerInfo();
 
     private Canvas networkCanvas;
+
+    private const string awaitingTextClient = "Waiting to establish connection with a host...";
+    private const string connectedTextClient = "Waiting for the host to start game...";
 
     private void Awake()
     {
@@ -25,6 +30,7 @@ public class NetworkUIHandler : MonoBehaviour
         startGameButton.onClick.AddListener(HandleStartGame);
         openPlayerDataFormButton.onClick.AddListener(HandleShowDataForm);
         networkCanvas = GetComponent<Canvas>();
+        NetworkManager.Singleton.OnConnectionEvent += HandleConnected;
 
 
         //Had to do it static because when i tried to subscribe to the event called by the
@@ -33,11 +39,19 @@ public class NetworkUIHandler : MonoBehaviour
         //calling the event OnGetPlayerDataOnScreenClosure, and I think this is what caused the data to get
         //eliminated/lost
         PlayerDataFormScreen.OnGetPlayerDataOnScreenClosure += CollectLocalPlayerData;
-        PlayerDataFormScreen.OnGetPlayerDataOnScreenClosure += (_) => ShowNetworkButtons();
+        PlayerDataFormScreen.OnGetPlayerDataOnScreenClosure += (_) => HandleShowNetworkButtons();
 
         //hides the buttons and shows the player data form
         HandleShowDataForm();
 
+    }
+
+    private void HandleConnected(NetworkManager manager, ConnectionEventData data)
+    {
+        if (NetworkManager.Singleton.IsHost) return;
+
+        if (data.EventType == ConnectionEvent.ClientConnected && data.ClientId == GameManager.localPlayerInfo.playerId)
+            clientMessageText.SetText(connectedTextClient);
     }
 
     /// <summary>
@@ -45,7 +59,7 @@ public class NetworkUIHandler : MonoBehaviour
     /// </summary>
     private void HandleShowDataForm()
     {
-        HideNetworkButtons();
+        HideNetworkUI();
         startGameButton.gameObject.SetActive(false);
         if (playerDataForm != null) playerDataForm.gameObject.SetActive(true);
         else
@@ -92,14 +106,47 @@ public class NetworkUIHandler : MonoBehaviour
 
     private void HandleUIGameBeginServer()
     {
-        HideNetworkButtons();
+        HideNetworkUI();
         startGameButton.gameObject.SetActive(true);
     }
 
-    private void HandleUIGameBeginClient()
+    /// <summary>
+    /// Hides the network UI buttons while showing the client message
+    /// </summary>
+    private void HandleUIGameBeginClient(string clientWarning = null)
     {
-        HideNetworkButtons();
+        HideNetworkUI();
         startGameButton.gameObject.SetActive(false);
+        clientMessageText.gameObject.SetActive(true);
+        clientMessageText.SetText((clientWarning == null) ? awaitingTextClient : clientWarning);
+    }
+
+    private void HandleShowNetworkButtons()
+    {
+
+        //if not host/server
+        if (!NetworkManager.Singleton.IsServer && NetworkManager.Singleton.IsClient)
+        {
+            //if client && connected
+            if (NetworkManager.Singleton.IsConnectedClient)
+            {
+                HandleUIGameBeginClient(connectedTextClient);
+                return;
+            }
+            else
+            {
+                HandleUIGameBeginClient(awaitingTextClient);
+                return;
+            }
+        }
+
+        if(NetworkManager.Singleton.IsHost)
+        {
+            HandleUIGameBeginServer();
+            return;
+        }
+
+        ShowNetworkButtons();
     }
 
     private void ShowNetworkButtons()
@@ -112,6 +159,12 @@ public class NetworkUIHandler : MonoBehaviour
     {
         clientButton.gameObject.SetActive(false);
         hostButton.gameObject.SetActive(false);
+    }
+
+    private void HideNetworkUI()
+    {
+        HideNetworkButtons();
+        clientMessageText.gameObject.SetActive(false);
     }
 
 }

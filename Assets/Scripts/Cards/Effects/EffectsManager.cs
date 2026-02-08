@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 using NUnit.Framework;
 using Unity.Netcode;
 using Unity.VisualScripting;
@@ -16,21 +17,60 @@ public class EffectsManager : NetworkBehaviour
 
     private const string applyMethodName = "Apply";
     private const string initializeMethodName = "Initialize";
+    private const string terminateMethodName = "TerminateEffect";
 
     public static Action<effectsEnum> OnLocalPlayerEffectFelt;
+    public static Action<effectsEnum> OnLocalPlayerEffectTerminated;
 
     private static Dictionary<effectsEnum, Type> effectsDict = new Dictionary<effectsEnum, Type>()
     {
         {effectsEnum.BLINDNESS, typeof(Blindness)},
-        {effectsEnum.CONFUSION, typeof(Confusion)}
+        {effectsEnum.CONFUSION, typeof(Confusion)},
+        {effectsEnum.TIREDNESS, typeof(Tiredness)}
     };
 
+    //this is local data
     private static Dictionary<effectsEnum, effectData> appliedEffectsWithTurnsOrTimeLeft = new Dictionary<effectsEnum, effectData>();
 
     public override void OnNetworkSpawn()
     {
         if (Instance == null) Instance = this;
         else Destroy(Instance);
+
+        if (IsServer) TurnManager.OnTurnOver += UpdateEffectsDictOnTurnOver;
+        else TurnManager.OnLocalTurnOver += UpdateEffectsDictOnTurnOver;
+    }
+
+    /// <summary>
+    /// Updates the <c>appliedEffectsWithTurnsOrTimeLeft</c> dictionary also telling the server to remove te effect's tag from its player data
+    /// </summary>
+    private void UpdateEffectsDictOnTurnOver()
+    {
+        List<effectData> currentEffects = appliedEffectsWithTurnsOrTimeLeft.Values.ToList();
+
+        foreach (effectData eff in currentEffects)
+        {
+            if (appliedEffectsWithTurnsOrTimeLeft[eff.effect].doesTurns)
+            {
+                appliedEffectsWithTurnsOrTimeLeft[eff.effect] = new effectData()
+                {
+                    doesTurns = eff.doesTurns,
+                    effect = eff.effect,
+                    turnsLeft = eff.turnsLeft - 1,
+                    timeLeft = eff.timeLeft
+                };
+            }
+
+            if (appliedEffectsWithTurnsOrTimeLeft[eff.effect].turnsLeft == 0)
+            {
+                PlayerMaskAssigner.Instance.HandleRemoveEffectFromPlayerDataServer_Rpc((ushort)eff.effect, NetworkManager.LocalClientId);
+                
+                RemoveEffect(new effectData[] { eff });
+                
+                print($"Effect {eff.effect} has finished its effect!");
+                appliedEffectsWithTurnsOrTimeLeft.Remove(eff.effect);
+            }
+        }
     }
 
     //this happens on the individual clients
@@ -39,7 +79,7 @@ public class EffectsManager : NetworkBehaviour
     /// </summary>
     /// <param name="playerIds">The list of players affected by the effect</param>
     /// <param name="effectParameters">The parameters for the effect in question</param>
-    private static void DoIt(ulong[] playerIds, effectData effectParameters)
+    private static void ApplyEffectToLocalClient(ulong[] playerIds, effectData effectParameters)
     {
         if (!effectsDict.ContainsKey(effectParameters.effect))
         {
@@ -62,14 +102,14 @@ public class EffectsManager : NetworkBehaviour
         }
 
         //instantiate the effect
-        object effectInstance = effectsDict[effectParameters.effect].Instantiate(false, new object[]{effectParameters});
+        object effectInstance = effectsDict[effectParameters.effect].Instantiate(false, new object[] { effectParameters });
 
         BindingFlags bindingFlagsOr = BindingFlags.Public | BindingFlags.FlattenHierarchy | BindingFlags.Instance;
-        
+
         //get references to the methods: "Initialize" and "Apply"
         MethodInfo applyMethod = effectsDict[effectParameters.effect].GetMethod(applyMethodName, bindingFlagsOr);
         MethodInfo initializeMethod = effectsDict[effectParameters.effect].GetMethod(initializeMethodName, bindingFlagsOr);
-        
+
         //if the effect hasn't already been applied
         if (!appliedEffectsWithTurnsOrTimeLeft.ContainsKey(effectParameters.effect))
         {
@@ -82,11 +122,42 @@ public class EffectsManager : NetworkBehaviour
             initializeMethod.Invoke(effectInstance, new object[] { effectParameters });
             //then invoke the apply methods
             applyMethod.Invoke(effectInstance, null);
-            
+
             OnLocalPlayerEffectFelt.Invoke(effectParameters.effect);
         }
+
     }
 
+    
+    /// <summary>
+    /// Triggers the TerminateEffect method inside the passed effect
+    /// </summary>
+    /// <param name="effect"></param>
+    private void RemoveEffectFromLocalClient(effectData data)
+    {
+        if (!appliedEffectsWithTurnsOrTimeLeft.ContainsKey(data.effect))
+        {
+            RuntimeMsg.Error("Unable to remove effect",
+                            $"Unable to remove effect: {data.effect} because it's not registered in the effectsDict dictionary (silly mistake oopsie)");
+
+            return;
+        }
+
+        //instantiate the effect
+        object effectInstance = effectsDict[data.effect].Instantiate(false, new object[] { data });
+
+        BindingFlags bindingFlagsOr = BindingFlags.Public | BindingFlags.FlattenHierarchy | BindingFlags.Instance;
+
+        MethodInfo terminateMethod = effectsDict[data.effect].GetMethod(terminateMethodName, bindingFlagsOr);
+
+        //if the effect hasn't already been applied
+        if (appliedEffectsWithTurnsOrTimeLeft.ContainsKey(data.effect))
+        {
+            terminateMethod.Invoke(effectInstance, null);
+            
+            OnLocalPlayerEffectTerminated?.Invoke(data.effect);
+        }
+    }
 
     [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
     public void ApplyEffectsClient_Rpc(ulong[] players, effectData[] effects)
@@ -95,7 +166,20 @@ public class EffectsManager : NetworkBehaviour
 
         for (int i = 0; i < effects.Length; i++)
         {
-            DoIt(players, effects[i]);
+            ApplyEffectToLocalClient(players, effects[i]);
+        }
+    }
+
+    
+
+//    [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
+    public void RemoveEffect(effectData[] effectsData)
+    {
+//        if (NetworkManager.LocalClientId != clientId) return;
+
+        for (int i = 0; i < effectsData.Length; i++)
+        {
+            RemoveEffectFromLocalClient(effectsData[i]);
         }
     }
 

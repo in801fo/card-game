@@ -28,7 +28,6 @@ public class InventoryManager : CoordinatedMonoBehaviour
 
     protected override void Beginning()
     {
-        //RuntimeMsg.Info(Directory.Exists("D:\\Github\\card-game\\Assets\\Scriptables\\Cards\\Character").ToString());
         allCardScriptables = Resources.LoadAll<CardScriptable>("Scriptables");
 
         Card.OnCardZeroUsages += OnCardZeroUsages;

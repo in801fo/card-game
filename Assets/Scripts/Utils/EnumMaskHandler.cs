@@ -31,7 +31,7 @@ public class EnumMaskHandler<T> where T: Enum
         {
             /*
                 Basically just moving the 1 across all the digits of mask (as a binary string)
-                and checking if at the i-th position there is a 1 (doinf the & (AND)).
+                and checking if at the i-th position there is a 1 (doing the & (AND)).
             */
             if ((mask & (1 << i)) != 0) enumElementsList.Add((T)(object)(1 << i));
         }
