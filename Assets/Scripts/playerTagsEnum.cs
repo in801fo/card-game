@@ -12,5 +12,7 @@ public enum playerTagsEnum
     /// <summary>
     /// One is tagged with this locally when they have just inflicted damage to the local player
     /// </summary>
-    HAS_JUST_INFLICTED_DAMAGE = 2
+    HAS_JUST_INFLICTED_DAMAGE = 2,
+
+    HAS_JUST_RECEIVED_DAMAGE = 4
 }

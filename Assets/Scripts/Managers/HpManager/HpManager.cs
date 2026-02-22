@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Netcode;
-using UnityEngine;
 
 public class HpManager : NetworkBehaviour
 {
@@ -16,19 +15,27 @@ public class HpManager : NetworkBehaviour
     public const float maxHp = 100;
 
     /// <summary>
-    /// First int is the playerId of the player which has lost/gained the amount specified by the float 
+    /// First ulong is the playerId of the player which has lost/gained the amount specified by the float 
     /// </summary>
     public static Action<ulong, float> OnHealthChange;
     public static Action<ulong> OnHealthZero;
 
     private Dictionary<ulong, float> playerHps = new Dictionary<ulong, float>();
 
+    public static float justReceivedDamage = 0;
+
     public override void OnNetworkSpawn()
     {
         if (Instance == null) Instance = this;
         else Destroy(this);
 
+        TurnManager.OnLocalTurnOver += HandleTurnOver;
         InitializePlayersHps();
+    }
+
+    private void HandleTurnOver()
+    {
+        justReceivedDamage = 0;
     }
 
     private void InitializePlayersHps()
@@ -96,17 +103,27 @@ public class HpManager : NetworkBehaviour
     }
 
 
+    /// <summary>
+    /// Method to handle health change in the local player. Invokes the OnHealthChange.
+    /// </summary>
+    /// <param name="playerId">The player affected by the health change</param>
+    /// <param name="amount">The amount of health to be added or removed (if amount > 0 then the amount is subtracted otherwise added)</param>
     [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
     public void OnHealthChangeClient_Rpc(ulong playerId, float amount)
     {
-        RuntimeMsg.Info("Received: OnHealthChangeClientRpc");
-        if (playerId == NetworkManager.LocalClientId) Hp -= amount;
+        RuntimeMsg.Info($"Received: OnHealthChangeClientRpc for {playerId} player");
+        if (playerId == NetworkManager.LocalClientId) {
+            if (amount > 0) Hp += amount;
+            else Hp -= amount;
+            justReceivedDamage = amount;
+            
+        }
         OnHealthChange?.Invoke(playerId, amount);
     }
 
-    public void IncrementHpServer_Rpc(float amount, ulong playerIds)
+    public void IncrementHpServer_Rpc(float amount, ulong playerId)
     {
-        IncrementHpSpecificGroupServer_Rpc(amount, new ulong[1] { playerIds });
+        IncrementHpSpecificGroupServer_Rpc(amount, new ulong[1] { playerId });
     }
 
     /// <summary>
@@ -121,8 +138,9 @@ public class HpManager : NetworkBehaviour
         for (int i = 0; i < playerIds.Length; i++)
         {
             ulong senderClientId = playerIds[i];
-            RuntimeMsg.Info($"Received Request to increment HP for {senderClientId}");
+            RuntimeMsg.Info($"Received Request to increment HP for {senderClientId}, amount: {amount}");
 
+            //the hps of the player in question
             float currentAmountSender;
 
 
@@ -135,7 +153,7 @@ public class HpManager : NetworkBehaviour
                 currentAmountSender = maxHp;
 
                 //useful only in the case in which _hp + amount > maxHp
-                amount = maxHp - Hp;
+                //amount = maxHp - Hp;
             }
             else currentAmountSender += amount;
 
@@ -147,8 +165,14 @@ public class HpManager : NetworkBehaviour
 
     }
 
+    /// <summary>
+    /// Finds all players with one of the provided tags in <c>affectedTags</c> and damages/heals all of the matches 
+    /// </summary>
+    /// <param name="affectedTags">The array of player tags affected</param>
+    /// <param name="amount">The amount of damage/healing to apply</param>
+    /// <param name="cardHeals">Should this heal?</param>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void HandleAffectedTagsServer_Rpc(playerTagsEnum[] affectedTags, float amount, bool cardHeals = false)
+    public void HandleAllAffectedTagsServer_Rpc(playerTagsEnum[] affectedTags, float amount, bool cardHeals = false)
     {
         List<playerInfo> players = GameManager.playersDict.Values.ToList();
         //check for every single passed tag...

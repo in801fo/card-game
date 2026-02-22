@@ -153,7 +153,31 @@ public class CardInteractionManager : MonoBehaviour
     private void UseCurrentlySelectedCard()
     {
         if (!currentSelected) return;
+
+        if (currentSelected.cardData.Type == cardTypeEnum.ACTION)
+        {
+            //if the card is not compatible don't use it
+            if (!HandleCompatibilityActionCard())
+                return;
+        }
+        
         currentSelected.UseCard();
+    }
+    
+    private bool HandleCompatibilityActionCard()
+    {
+        //ignoring the check if the characterCardCompatibility is null (only for testing purposes)
+        //TODO: throw a warning when an action card does not have a characterCardCompatibility listed (is null)
+        if (/*(currentSelected.cardData.characterCardCompatibility == null) ||*/
+                currentSelected.cardData.characterCardCompatibility != null &&
+                !InventoryManager.Instance.handDeck.Contains(currentSelected.cardData.characterCardCompatibility))
+        {
+            RuntimeMsg.Info("You may not use this card",
+                            $"You may not use this card as the compatible character card ({currentSelected.cardData.characterCardCompatibility.Name}) is not present in your inventory. Worry not as you can exchange this card for another random one until you get a compatible one!");
+            return false;
+        }
+
+        return true;
     }
 
 }

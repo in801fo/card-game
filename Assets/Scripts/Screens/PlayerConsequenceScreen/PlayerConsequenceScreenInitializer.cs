@@ -55,10 +55,7 @@ public class PlayerConsequenceScreenInitializer : ScreenInitializer<playerConseq
         }
     }
 
-    public void UpdateScreenHeading(string str)
-    {
-        SetScreenHeading(str);
-    }
+    
 
     /// <summary>
     /// Handles initialization of player entry

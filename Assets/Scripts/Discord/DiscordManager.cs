@@ -6,7 +6,7 @@ public class DiscordManager : MonoBehaviour
 {
     [SerializeField] private ulong applicationId;
     [SerializeField] private RichPresenceHandler richPresenceHandler;
-    private Client client;
+    public static Client client { get; private set; }
     private string codeVerifier;
 
     void Awake()
@@ -38,14 +38,14 @@ public class DiscordManager : MonoBehaviour
 
     public void StartOAuthFlow()
     {
-        /*var authorizationVerifier = client.CreateAuthorizationCodeVerifier();
+        var authorizationVerifier = client.CreateAuthorizationCodeVerifier();
         codeVerifier = authorizationVerifier.Verifier();
 
         var args = new AuthorizationArgs();
         args.SetClientId(applicationId);
         args.SetScopes(Client.GetDefaultCommunicationScopes());
         args.SetCodeChallenge(authorizationVerifier.Challenge());
-        client.Authorize(args, OnAuthorizeResult);*/
+        client.Authorize(args, OnAuthorizeResult);
     }
 
     private void OnAuthorizeResult(ClientResult result, string code, string redirectUri)

@@ -11,6 +11,8 @@ public struct effectData : INetworkSerializable
     public bool doesTurns;
     public int turnsLeft;
     public float timeLeft;
+    public consequenceTarget effectTarget;
+    public float damage;
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
     {
@@ -18,5 +20,7 @@ public struct effectData : INetworkSerializable
         serializer.SerializeValue(ref doesTurns);
         serializer.SerializeValue(ref turnsLeft);
         serializer.SerializeValue(ref timeLeft);
+        serializer.SerializeValue(ref effectTarget);
+        serializer.SerializeValue(ref damage);
     }
 }

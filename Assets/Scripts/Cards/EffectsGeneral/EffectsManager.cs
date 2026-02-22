@@ -2,9 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using JetBrains.Annotations;
-using NUnit.Framework;
 using Unity.Netcode;
 using Unity.VisualScripting;
 
@@ -26,7 +23,9 @@ public class EffectsManager : NetworkBehaviour
     {
         {effectsEnum.BLINDNESS, typeof(Blindness)},
         {effectsEnum.CONFUSION, typeof(Confusion)},
-        {effectsEnum.TIREDNESS, typeof(Tiredness)}
+        {effectsEnum.TIREDNESS, typeof(Tiredness)},
+        {effectsEnum.REGENHEALTH, typeof(HealthRegen)},
+        {effectsEnum.PERTURNDAMAGE, typeof(PerTurnDamage)}
     };
 
     //this is local data
@@ -61,9 +60,9 @@ public class EffectsManager : NetworkBehaviour
                 };
             }
 
-            if (appliedEffectsWithTurnsOrTimeLeft[eff.effect].turnsLeft == 0)
+            if (appliedEffectsWithTurnsOrTimeLeft[eff.effect].turnsLeft <= 0)
             {
-                PlayerMaskAssigner.Instance.HandleRemoveEffectFromPlayerDataServer_Rpc((ushort)eff.effect, NetworkManager.LocalClientId);
+                PlayerMaskAssigner.Instance.HandleRemoveEffectFromPlayerDataServer_Rpc((int)eff.effect, NetworkManager.LocalClientId);
                 
                 RemoveEffect(new effectData[] { eff });
                 
@@ -101,6 +100,7 @@ public class EffectsManager : NetworkBehaviour
             return;
         }
 
+        print($"Applying to local: {effectParameters.effect}");
         //instantiate the effect
         object effectInstance = effectsDict[effectParameters.effect].Instantiate(false, new object[] { effectParameters });
 
@@ -150,13 +150,10 @@ public class EffectsManager : NetworkBehaviour
 
         MethodInfo terminateMethod = effectsDict[data.effect].GetMethod(terminateMethodName, bindingFlagsOr);
 
-        //if the effect hasn't already been applied
-        if (appliedEffectsWithTurnsOrTimeLeft.ContainsKey(data.effect))
-        {
-            terminateMethod.Invoke(effectInstance, null);
-            
-            OnLocalPlayerEffectTerminated?.Invoke(data.effect);
-        }
+        terminateMethod.Invoke(effectInstance, null);
+
+        OnLocalPlayerEffectTerminated?.Invoke(data.effect);
+    
     }
 
     [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
@@ -170,12 +167,15 @@ public class EffectsManager : NetworkBehaviour
         }
     }
 
-    
+    [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
+    public void ApplyEffectClient_Rpc(ulong[] players, effectData effect)
+    {
+        if (!players.Contains(NetworkManager.Singleton.LocalClientId)) return;
+        ApplyEffectToLocalClient(players, effect);
+    }
 
-//    [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
     public void RemoveEffect(effectData[] effectsData)
     {
-//        if (NetworkManager.LocalClientId != clientId) return;
 
         for (int i = 0; i < effectsData.Length; i++)
         {
@@ -186,27 +186,31 @@ public class EffectsManager : NetworkBehaviour
     /// <summary>
     /// Method to request the host/server to apply the passed effects
     /// </summary>
-    /// <param name="affectedPlayers">The affected players</param>
-    /// <param name="parameters">The data for the desired effects</param>
+    /// <param name="cardTarget">The consequence target for the card's attack</param>
+    /// <param name="parameters">The data for all the card's effects</param>
+    /// <param name="cardsAffectedPlayers">An array containing all of the ids affected by the player (used in case the <c>cardTarget</c> requires a consequence screen)</param>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void RequestApplyEffectsServer_Rpc(ulong[] affectedPlayers, effectData[] parameters)
+    public void RequestApplyEffectsServer_Rpc(consequenceTarget cardTarget, effectData[] parameters, ulong[] cardsAffectedPlayers)
     {
-        for (int i = 0; i < affectedPlayers.Length; i++)
+        for (int i = 0; i < parameters.Length; i++)
         {
-            //check for the existance of the currentPlayer in the players dictionary
-            if (!GameManager.playersDict.ContainsKey(affectedPlayers[i]))
-            {
-                RuntimeMsg.Warning($"PlayerId: {affectedPlayers[i]} not found while applying effects");
-                continue;
-            }
+            //if the effect's target requires a consequence screen override the effect's target and set it to the card's target
+            if (parameters[i].effectTarget != consequenceTarget.LOCAL
+                && parameters[i].effectTarget != consequenceTarget.RANDOM_MULTIPLE_RANDOM
+                    && parameters[i].effectTarget != consequenceTarget.RANDOM_SINGLE_INC
+                        && parameters[i].effectTarget != consequenceTarget.RANDOM_SINGLE_EX)
+                parameters[i].effectTarget = cardTarget;
 
-            //apply the effects to the current player
-            ApplyEffectsClient_Rpc(affectedPlayers, parameters);
-            for (int j = 0; j < parameters.Length; j++)
-            {
-                PlayerMaskAssigner.Instance.HandleAddEffectToPlayerDataServer_Rpc((ushort)parameters[j].effect, affectedPlayers[i]);
-            }
+            //if the effect's target has been overridden its affected players should be equal to the card's ones
+            //doing this as I cannot open a screen for the effect
+            ulong[] affectedPlayers = (parameters[i].effectTarget == cardTarget && cardsAffectedPlayers != null) ?
+                cardsAffectedPlayers : ConsequenceTargetHandler.GetPlayerIdsForConsequenceTarget(parameters[i].effectTarget).ToArray(); 
+            
+            ApplyEffectClient_Rpc(affectedPlayers, parameters[i]);
+            //handle updating the data representing the player in question with the current effect
+            PlayerMaskAssigner.Instance.HandleAddEffectToPlayerDataServer_Rpc((int)parameters[i].effect, affectedPlayers[i]);
         }
+   
     }
 }
 

@@ -1,8 +1,7 @@
 public class CharacterCard : Card
 {
-    public override void UseCard()
+    public override void HandleCardLogic()
     {
-        base.UseCard();
         RuntimeMsg.Error("Not Yet Implemented");
     }
 }

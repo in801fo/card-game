@@ -74,7 +74,7 @@ public class HealthBarUIHandler : MonoBehaviour
     /// <param name="amount"></param>
     private void HandleCheckHealthChange(ulong playerId, float amount)
     {
-        if (playerId.Equals(_myPlayer.Value.playerId)) ChangeLife(amount);
+        if (playerId == _myPlayer.Value.playerId) ChangeLife(amount);
     }
 
     private void ChangeLife(float amount)

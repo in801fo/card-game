@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -40,7 +41,43 @@ public class ScreenInitializer<T> : MonoBehaviour
         else RuntimeMsg.Warning($"No close button instance was provided for screen {this.name}");
         ScreensManager.OnScreenClosure += HandleClosureCheck;
 
+        HandleCanvasResizers();
+
         SetScreenHeading(string.Empty, false);
+    }
+
+    public void UpdateScreenHeading(string str)
+    {
+        SetScreenHeading(str);
+    }
+
+    /// <summary>
+    /// Handles the canvas resizers of all canvases present in every screen
+    /// </summary>
+    private void HandleCanvasResizers()
+    {
+        Canvas[] canvases = this.GetComponentsInChildren<Canvas>();
+
+        foreach (Canvas canvas in canvases)
+        {
+            if (!canvas.gameObject.TryGetComponent<CanvasScaler>(out CanvasScaler scaler))
+            {
+                scaler = canvas.gameObject.AddComponent<CanvasScaler>();
+                SetScaler(scaler);
+            }
+            else
+            {
+                if (scaler.uiScaleMode != CanvasScaler.ScaleMode.ScaleWithScreenSize)
+                    SetScaler(scaler);
+            }
+        }
+    }
+    
+    private void SetScaler(CanvasScaler scaler)
+    {
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
+        scaler.referenceResolution = new Vector2(1920, 1080);
     }
 
     protected void SetScreenHeading(string str = "", bool overrideEditorHeading = true)

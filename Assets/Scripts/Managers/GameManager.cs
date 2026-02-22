@@ -4,7 +4,6 @@ using UnityEngine;
 using Random = UnityEngine.Random;
 using System;
 using System.Linq;
-using Discord.Sdk;
 
 public class GameManager : NetworkBehaviour
 {
@@ -24,10 +23,9 @@ public class GameManager : NetworkBehaviour
     [SerializeField] private EffectsManager effectManager;
 
     [SerializeField] private TurnManager turnManager;
+    [SerializeField] private TurnUIManager turnUIManager;
     [SerializeField] private DiscordManager discordManager;
-
     private NetworkUIHandler networkUIHandler;
-
     private InventoryUIManager inventoryUIManagerInstance;
 
     /// <summary>
@@ -219,7 +217,7 @@ public class GameManager : NetworkBehaviour
         //set the window name only if this is a runtime instance of the game
 #if UNITY_STANDALONE_WIN
         IntPtr windowInt = WindowUtil.GetActiveWindow();
-        WindowUtil.SetWindowTitle(windowInt, $"Local Client Id: {NetworkManager.LocalClientId}");
+        WindowUtil.SetWindowTitle(windowInt, $"Local Client Id: {NetworkManager.LocalClientId} - Username: {localPlayerInfo.Name}");
 #endif
 
         RuntimeMsg.Info("<color=green>You are connected!</color>", $"You have successfully connected to the server (id: {NetworkManager.ServerClientId}), your id is {NetworkManager.LocalClientId}");
@@ -251,11 +249,8 @@ public class GameManager : NetworkBehaviour
             HandleAudioGeneration();
             HandlePlayerMaskAssigner();
             HandleEffectManager();
-            //TODO: improve
-            NetworkBehaviour turnMan = Instantiate(turnManager.gameObject).GetComponent<NetworkBehaviour>();
-            turnMan.NetworkObject.Spawn();
-            managers.Add(turnMan.gameObject);
         }
+        HandleTurnManager();
 
         //here getting the setting the parent to the managersHolder
         for (int i = 0; i < managers.Count; i++)
@@ -275,6 +270,21 @@ public class GameManager : NetworkBehaviour
         if (coordinatedMonoBehaviourCount == actualInheriting)
             OnDoneGenerating?.Invoke();
 
+    }
+
+    private void HandleTurnManager()
+    {
+        //TODO: improve
+        new GameObject("== Turn Managers ==");
+        
+        if (IsServer)
+        {
+            NetworkBehaviour turnMan = Instantiate(turnManager.gameObject).GetComponent<NetworkBehaviour>();
+            turnMan.NetworkObject.Spawn();
+            managers.Add(turnMan.gameObject);
+        }
+
+        managers.Add(Instantiate(turnUIManager.gameObject));
     }
 
     private void HandleEffectManager()
@@ -461,21 +471,19 @@ public class GameManager : NetworkBehaviour
 #endregion
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.D) && IsHost)
-            NetworkManager.DisconnectClient(playersNetList[1].playerId);
         if (Input.GetKeyDown(KeyCode.S))
             PrintLocalPlayerTags();
     }
     
     private void PrintLocalPlayerTags()
     {
-        List<effectsEnum> tags = EnumMaskHandler<effectsEnum>.ExtractPlayerTagsFromMask(localPlayerInfo.playerEffectsMask);
+        List<playerTagsEnum> tags = EnumMaskHandler<playerTagsEnum>.ExtractPlayerTagsFromMask(localPlayerInfo.playerTagsMask);
         string tagsString = string.Empty;
         for (int i = 0; i < tags.Count; i++)
         {
             tagsString += tags[i].ToString() + "\n";
         }
-        RuntimeMsg.Info("----Local Player Effects----", tagsString);
+        RuntimeMsg.Info("----Local Player Tags----", tagsString);
     }
 
     public static void ValidateInitialization() => coordinatedMonoBehaviourCount++;

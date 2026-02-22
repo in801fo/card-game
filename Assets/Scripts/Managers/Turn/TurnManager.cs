@@ -100,6 +100,7 @@ public class TurnManager : NetworkBehaviour
     {
         if (clientId != NetworkManager.LocalClientId) return;
         RuntimeMsg.Info("Yo, the server just told me that my time's up!!");
+        IsMyTurn = false;
         OnLocalTurnOver?.Invoke();
     }
 
@@ -114,8 +115,8 @@ public class TurnManager : NetworkBehaviour
 
         while (currentTurnTimer < turnSecondsDuration)
         {
-            currentTurnTimer += Time.fixedDeltaTime;
-            yield return new WaitForEndOfFrame();
+            currentTurnTimer += 1;
+            yield return new WaitForSecondsRealtime(1);
         }
 
         OnTurnOver?.Invoke();

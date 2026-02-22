@@ -1,91 +1,71 @@
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Netcode;
-using UnityEngine;
 
 public class ActionCard : Card
 {
-    private PlayerConsequenceScreenHandler handleToPlayerConsequenceScreen;
-
-    public override void UseCard()
+    public override void HandleCardLogic()
     {
-        base.UseCard();
-        DecideDamageArea();
-        //if this card uses a player consequence screen to decide whom should get damaged...
-        if (handleToPlayerConsequenceScreen != null)
-            //do this...
-            PlayerConsequenceScreenHandler.OnDoneDeciding += HandleReadyToUse;
+        if (!cardData.Heals) HandleDamage();
+        else HandleHealing();
+
+        HandleReadyToUse();
     }
 
-    public void DecideDamageArea()
+    private void HandleDamage()
     {
+        //when dealing damage we gather the list of affected players
+        List<ulong> playerIds = ConsequenceTargetHandler.GetPlayerIdsForConsequenceTarget(
+            cardData.consequenceTarget,
+            cardData.numberOfAffectedPlayers,
+            true,
+            cardData.affectedTags
+        );
 
-        switch (cardData.consequenceTarget)
+        //if this card uses a player consequence screen to decide whom should get damaged the previous method call will return null...
+        if (playerIds == null)
         {
-            case consequenceTarget.LOCAL:
-                HpManager.Instance.LowerHpServer_Rpc(cardData.damageAmount, NetworkManager.Singleton.LocalClientId);
-
-                HandleReadyToUse(new List<ulong> { GameManager.localPlayerInfo.playerId });
-                break;
-            case consequenceTarget.ALL_EX:
-                HpManager.Instance.LowerHpSpecificGroupServer_Rpc(cardData.damageAmount, GameManager.playersDict.Keys
-                                                                                    .ToArray()
-                                                                                    .Where((ulong id) => id != NetworkManager.Singleton.LocalClientId)
-                                                                                    .ToArray());
-                
-                HandleReadyToUse(GameManager.playersDict.Keys
-                                            .Where((ulong id) => id != NetworkManager.Singleton.LocalClientId)
-                                            .ToList());
-                break;
-            case consequenceTarget.ALL_INC:
-                HpManager.Instance.LowerHpSpecificGroupServer_Rpc(cardData.damageAmount, GameManager.playersDict.Keys
-                                                                                    .ToArray());
-                HandleReadyToUse(GameManager.playersDict.Keys.ToList());
-                break;
-            case consequenceTarget.SPECIFIC_SINGLE:
-
-                PlayerConsequenceScreenInitializer.AskForSinglePlayer(cardData.consequenceTarget);
-                PlayerConsequenceScreenHandler.OnDoneDeciding += HandleLowerHpServerSingle;
-                break;
-            default:
-                HandleRequestForSpecificGroup();
-                PlayerConsequenceScreenHandler.OnDoneDeciding += LowerHpSpecificGroupServer;
-                break;
+            //that means that a screen has been opened and when the player has decided the players the "OnDoneDeciding" action will be called and it'll return
+            //a list containing all included players
+            PlayerConsequenceScreenHandler.OnDoneDeciding +=
+                (List<ulong> ids) => HpManager.Instance.LowerHpSpecificGroupServer_Rpc(cardData.damageAmount, ids.ToArray());
         }
+        else
+            HpManager.Instance.LowerHpSpecificGroupServer_Rpc(cardData.damageAmount, playerIds.ToArray());
+
+        attackedPlayers = playerIds.ToArray();
     }
 
-    private void HandleReadyToUse(List<ulong> affectedPlayers = null)
+    private void HandleHealing()
+    {
+        if (cardData.damageAmount == 0)
+        {
+            //if the healing amount is zero than we must be using a regenhealth effect!
+            if (cardData.cardEffects != null &&
+                cardData.cardEffects.ToList().FindIndex((effectData data) => data.effect == effectsEnum.REGENHEALTH) == -1)
+                RuntimeMsg.Warning($"Healing action card {cardData.Name} does not contain effect {effectsEnum.REGENHEALTH}!",
+                    $"This warning is not catastrophic just telling you that the {cardData.Name} card is useless or at least does not heal...");
+
+            /*
+                A problem here is that I have to specify, for the effect currently considered (HealthRegen) its parameters
+                and affectedPlayers. This should not be the case as all effects must be set in the inspector in the card scriptable.
+                TODO: implement a way to make effects more customizable for every single card 
+            */
+            return;
+        }
+        else HpManager.Instance.IncrementHpServer_Rpc(cardData.damageAmount, GameManager.localPlayerInfo.playerId);
+    }
+
+    /// <summary>
+    /// Reduces the card's durability and handles effects and SFXs
+    /// </summary>
+    /// <param name="affectedPlayers"></param>
+    private void HandleReadyToUse()
     {
         ReduceCardUse();
-        //if the card has effects
-        if (cardData.cardEffects != null && cardData.cardEffects.Length != 0)
-            //if the passed list of affected players is null that means that the affected are all players in the game
-            //TODO: differentiate between ALL_INC and ALL_EX, currently only considering ALL_INC
-            
-            //request the server for them to be applied
-            EffectsManager.Instance.RequestApplyEffectsServer_Rpc(
-                affectedPlayers == null ?
-                    GameManager.playersDict.Keys.ToArray() : affectedPlayers.ToArray(),
-                    cardData.cardEffects
-                );
-        
-        if (cardData.hasSoundEffect) 
-            AudioManager.Instance.RequestPlayCardSFXServer_Rpc(Random.Range(0, cardData.onUseSoundEffect.Length), cardData.name);
-        OnCardUseReady?.Invoke(this);
+        HandleEffectsAndSFX();
     }
 
-    private void HandleRequestForSpecificGroup()
-    {
-        if (cardData.numberOfAffectedPlayers > 0)
-            handleToPlayerConsequenceScreen = PlayerConsequenceScreenInitializer.AskForPlayerGroup(cardData.numberOfAffectedPlayers, cardData.consequenceTarget);
-        else
-        //if the card affects players with a certain tag 
-        {
-            HpManager.Instance.HandleAffectedTagsServer_Rpc(cardData.affectedTags, cardData.damageAmount, cardData.Heals);
-
-            HandleReadyToUse(GameManager.GetAllPlayersWithTags(cardData.affectedTags));
-        }
-    }
+    
 
     private void HandleLowerHpServerSingle(List<ulong> playerIds)
     {

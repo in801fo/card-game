@@ -13,8 +13,7 @@ public abstract class Effect
     public static int turnDuration { get; protected set; }
 
     public static Action<effectData> OnEffectApplied { get; set; }
-    public static effectsEnum effectAsEnum;
-    private effectData effectParameters;
+    protected effectData effectParameters;
 
     protected bool hasInitialized = false;
 

@@ -12,7 +12,8 @@ public class EnumMaskHandler<T> where T: Enum
     /// <returns></returns>
     public static bool HasEnumValueInMask(int currentMask, T enumValue)
     {
-        return (currentMask & (1 << ((int)Convert.ChangeType(enumValue, typeof(int)) - 1))) != 0;
+        int convertedValue = (int)Convert.ChangeType(enumValue, typeof(int));
+        return (currentMask & convertedValue) == convertedValue;
     }
 
     /// <summary>
@@ -23,11 +24,11 @@ public class EnumMaskHandler<T> where T: Enum
     /// a string of T values as a string of binary digits. 0000000000000011 = 3, the single digits, the ones
     /// set to 1 at least, represent a tag, in this case the string is saying that the player has 2 tags: <c>HAS_MERIDIONE</c> and <c>HAS_JUST_INFLICTED_DAMAGE.</c></param>
     /// <returns></returns>
-    public static List<T> ExtractPlayerTagsFromMask(ushort mask)
+    public static List<T> ExtractPlayerTagsFromMask(int mask)
     {
         List<T> enumElementsList = new List<T>();
 
-        for (int i = 0; i < 16; i++)
+        for (int i = 0; i < 32; i++)
         {
             /*
                 Basically just moving the 1 across all the digits of mask (as a binary string)
@@ -39,17 +40,17 @@ public class EnumMaskHandler<T> where T: Enum
         return enumElementsList;
     }
 
-    public static void SafeAddTagToMask(ref ushort maskToAdd, T enumValue)
+    public static void SafeAddTagToMask(ref int maskToAdd, T enumValue)
     {
-        if (HasEnumValueInMask(maskToAdd, enumValue)) return;
+        if (HasEnumValueInMask(maskToAdd, enumValue)) { RuntimeMsg.Info("Avoided tag mess!"); return; }
 
-        maskToAdd += (ushort)Convert.ChangeType(enumValue, typeof(ushort));
+        maskToAdd += (int)Convert.ChangeType(enumValue, typeof(int));
     }
 
-    public static void SafeRemoveTagFromMask(ref ushort maskToAdd, T enumValue)
+    public static void SafeRemoveTagFromMask(ref int maskToOperate, T enumValue)
     {
-        if (!HasEnumValueInMask(maskToAdd, enumValue)) return;
+        if (!HasEnumValueInMask(maskToOperate, enumValue)) return;
 
-        maskToAdd -= (ushort)Convert.ChangeType(enumValue, typeof(ushort));
+        maskToOperate -= (int)Convert.ChangeType(enumValue, typeof(int));
     }
 }

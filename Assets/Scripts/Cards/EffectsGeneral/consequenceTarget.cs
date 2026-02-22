@@ -28,5 +28,20 @@ public enum consequenceTarget
     /// <summary>
     /// A specific group of players are affected including local player
     /// </summary>
-    SPECIFIC_GROUP_INC
+    SPECIFIC_GROUP_INC,
+
+    /// <summary>
+    /// A random player including the local one is affected
+    /// </summary>
+    RANDOM_SINGLE_EX,
+
+
+    /// <summary>
+    /// A random player except for the local one is affected
+    /// </summary>
+    RANDOM_SINGLE_INC,
+    /// <summary>
+    /// A random group of players of a random size is affected
+    /// </summary>
+    RANDOM_MULTIPLE_RANDOM,
 }

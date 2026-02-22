@@ -1,6 +1,8 @@
+using System;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "NewCard", menuName = "Create New Card")]
+[Serializable]
 public class CardScriptable : ScriptableObject
 {
 
@@ -24,5 +26,7 @@ public class CardScriptable : ScriptableObject
     [SerializeField] public playerTagsEnum[] affectedTags;
     [field: SerializeField] public bool hasSoundEffect { get; private set; }
     [SerializeField] public AudioClip[] onUseSoundEffect;
+
+    [field: SerializeField] public CardScriptable characterCardCompatibility { get; private set; }
 
 }

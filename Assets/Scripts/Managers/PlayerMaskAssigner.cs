@@ -4,10 +4,6 @@ using System.Linq;
 using Unity.Collections;
 using Unity.Netcode;
 using Unity.VisualScripting;
-using UnityEngine;
-using UnityEngine.Rendering;
-
-//TODO: implement a way to Remove tags (very easy)
 
 /// <summary>
 /// Handles assigning the player with tags required to do some stuff to only players which satisfy specific requirements.
@@ -23,17 +19,31 @@ public class PlayerMaskAssigner : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        InventoryManager.OnCardAddedToHandDeck += HandleHasMeridione;
+        InventoryManager.OnCardAddedToHandDeck += HandleHasMeridioneClient;
         InventoryManager.OnGroupCardAddedToHandDeck += CheckInGroupHasMeridione;
+        HpManager.OnHealthChange += CheckHasJustReceivedDamage;
         EffectsManager.OnLocalPlayerEffectFelt += AddEffectMask;
+        EffectsManager.OnLocalPlayerEffectTerminated += RemoveEffectMask;
 
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
     }
 
+    private void RemoveEffectMask(effectsEnum effect)
+    {
+        HandleRemoveEffectFromPlayerDataServer_Rpc((int)effect, NetworkManager.LocalClientId);
+    }
+
+    private void CheckHasJustReceivedDamage(ulong playerId, float amount)
+    {
+        if (playerId != GameManager.localPlayerInfo.playerId) return;
+
+        CheckHasJustReceivedDamageServer_Rpc(playerId, amount);
+    }
+
     private void AddEffectMask(effectsEnum value)
     {
-        HandleAddEffectToPlayerDataServer_Rpc((ushort)value, NetworkManager.LocalClientId);
+        HandleAddEffectToPlayerDataServer_Rpc((int)value, NetworkManager.LocalClientId);
     }
 
     /// <summary>
@@ -43,7 +53,7 @@ public class PlayerMaskAssigner : NetworkBehaviour
     /// <param name="playerId">The id of the player to which to add the tag</param>
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void HandleAddPlayerTagsServer_Rpc(ushort tag, ulong playerId)
+    public void HandleAddPlayerTagsServer_Rpc(int tag, ulong playerId)
     {
         SafeHandleAddToMask<playerTagsEnum>((playerTagsEnum)tag, playerId);
 
@@ -58,7 +68,7 @@ public class PlayerMaskAssigner : NetworkBehaviour
     /// <param name="effect">The effect whished to be added to the player's effect mask</param>
     /// <param name="playerId">The id of the desired player</param>
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void HandleAddEffectToPlayerDataServer_Rpc(ushort effect, ulong playerId)
+    public void HandleAddEffectToPlayerDataServer_Rpc(int effect, ulong playerId)
     {
         SafeHandleAddToMask<effectsEnum>((effectsEnum)effect, playerId);
         RuntimeMsg.Info($"Added {(effectsEnum)effect} effect to {playerId}'s player mask");
@@ -66,15 +76,16 @@ public class PlayerMaskAssigner : NetworkBehaviour
 
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void HandleRemoveEffectFromPlayerDataServer_Rpc(ushort effect, ulong playerId)
+    public void HandleRemoveEffectFromPlayerDataServer_Rpc(int effect, ulong playerId)
     {
         SafeHandleRemoveFromMask<effectsEnum>((effectsEnum)effect, playerId);
-        
+
         print($"Removed {(effectsEnum)effect} from {playerId}'s mask");
     }
 
     /// <summary>
-    /// Handles the logic of adding values to the player's masks (either of type <c>effectsEnum</c> or <c>playerTagsEnum</c>)
+    /// Safely adds a tag (either of effect type of just a player tag) to the corresponding player's mask if not already
+    /// present (either of type <c>effectsEnum</c> or <c>playerTagsEnum</c>)
     /// </summary>
     /// <typeparam name="T">The type we're dealing with (either <c>effectsEnum</c> or <c>playerTagsEnum</c>)</typeparam>
     /// <param name="enumValue">The value to add to the masks</param>
@@ -113,7 +124,7 @@ public class PlayerMaskAssigner : NetworkBehaviour
     {
         for (int i = 0; i < cards.Count; i++)
         {
-            HandleHasMeridione(cards[i]);
+            HandleHasMeridioneClient(cards[i]);
         }
     }
 
@@ -133,14 +144,22 @@ public class PlayerMaskAssigner : NetworkBehaviour
         if (caller == NetworkManager.LocalClientId)
         {
             print($"Must add tag: {playerTag}");
-            HandleAddPlayerTagsServer_Rpc((ushort)playerTag, caller);
+            HandleAddPlayerTagsServer_Rpc((int)playerTag, caller);
         }
     }
 
-    private void HandleHasMeridione(CardScriptable scriptable)
+    private void HandleHasMeridioneClient(CardScriptable scriptable)
     {
         FixedString64Bytes scriptableName = new FixedString64Bytes(scriptable.Name);
         CheckHasMeridioneServer_Rpc(NetworkManager.LocalClientId, scriptable.Type, scriptableName);
+    }
+    
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    private void CheckHasJustReceivedDamageServer_Rpc(ulong caller, float amount)
+    {
+        //if it's damage (negative for damage, positive for healing)
+        if (amount < 0)
+            AssignTagClient_Rpc(caller, playerTagsEnum.HAS_JUST_RECEIVED_DAMAGE);
     }
 
 }

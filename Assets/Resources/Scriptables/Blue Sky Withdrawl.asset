@@ -10,26 +10,27 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f0e4ba4922ff9a049ba339aa4c3dbc8c, type: 3}
-  m_Name: Morte a Terronia
+  m_Name: Blue Sky Withdrawl
   m_EditorClassIdentifier: Assembly-CSharp::CardScriptable
-  <Name>k__BackingField: Morte a Terronia!
+  <Name>k__BackingField: Blue Sky Withdrawl
   <Sprite>k__BackingField: {fileID: 0}
-  <Description>k__BackingField: 
+  <Description>k__BackingField: Infligge un danno periodico di 5 hp ogni turno che
+    passa al giocatore scelto.
   <Type>k__BackingField: 0
-  <consequenceTarget>k__BackingField: 4
-  <numberOfAffectedPlayers>k__BackingField: -1
+  <consequenceTarget>k__BackingField: 3
+  <numberOfAffectedPlayers>k__BackingField: 0
   <Heals>k__BackingField: 0
-  <damageAmount>k__BackingField: 25.5
+  <damageAmount>k__BackingField: 0
   cardEffects:
-  - effect: 1
+  - effect: 16
     doesTurns: 1
-    turnsLeft: 2
+    turnsLeft: 10
     timeLeft: 0
     effectTarget: 0
-    damage: 0
-  <maxCardUsages>k__BackingField: 2
-  affectedTags: 01000000
+    damage: 5
+  <maxCardUsages>k__BackingField: 1
+  affectedTags: 
   <hasSoundEffect>k__BackingField: 1
   onUseSoundEffect:
-  - {fileID: 8300000, guid: 209554b67dca12c4f9803ea3796dbdd8, type: 3}
-  <characterCardCompatibility>k__BackingField: {fileID: 11400000, guid: 13918fad292e49741823072320a4d61a, type: 2}
+  - {fileID: 8300000, guid: a9fdb8d6694937a4e936329760e59a05, type: 3}
+  <characterCardCompatibility>k__BackingField: {fileID: 11400000, guid: 8fd08bb11b10bb54bbde0e4df875a28a, type: 2}

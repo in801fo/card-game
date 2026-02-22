@@ -25,3 +25,4 @@ MonoBehaviour:
   affectedTags: 
   <hasSoundEffect>k__BackingField: 0
   onUseSoundEffect: []
+  <characterCardCompatibility>k__BackingField: {fileID: 0}

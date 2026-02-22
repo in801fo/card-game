@@ -12,8 +12,8 @@ public struct playerInfo : INetworkSerializable, IEquatable<playerInfo>
     public FixedString64Bytes Name;
     public pronouns Pronouns;
     public ulong playerId;
-    public ushort playerTagsMask;
-    public ushort playerEffectsMask;
+    public int playerTagsMask;
+    public int playerEffectsMask;
 
     public bool Equals(playerInfo other)
     {

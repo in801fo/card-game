@@ -3,15 +3,31 @@ using Discord.Sdk;
 
 public class RichPresenceHandler : MonoBehaviour
 {
-    [SerializeField] private string details = "In Unity";
+    private const string inALobbyHeading = "In a Lobby";
 
-    [SerializeField] private string state = "Building a game (Ciao Kim)";
+    private const string inALobbyAwaitingConnectionState = "In a lobby awaiting to connect";
+
+    private const string inGameHeading = "In a match";
+
+    private const string inGameState = "In a match";
+
+    private string currentDetails;
+
+    private string currentState;
 
     private ulong startTimestamp;
 
     private void Start()
     {
         startTimestamp = (ulong)System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        GameManager.OnDoneGenerating += () => UpdateRichPresence(inGameState, inGameHeading);
+    }
+
+    public void UpdateRichPresence(string details, string heading)
+    {
+        currentDetails = heading;
+        currentState = details;
+        UpdateRichPresence(DiscordManager.client);
     }
 
     public void UpdateRichPresence(Client client)
@@ -19,8 +35,8 @@ public class RichPresenceHandler : MonoBehaviour
         Activity activity = new Activity();
 
         activity.SetType(ActivityTypes.Playing);
-        activity.SetDetails(details);
-        activity.SetState(state);
+        activity.SetDetails(currentDetails);
+        activity.SetState(currentState);
 
         var activityTimestamp = new ActivityTimestamps();
         activityTimestamp.SetStart(startTimestamp);
